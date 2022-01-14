@@ -72,5 +72,5 @@ package:
 	DOCKER_BUILDKIT=1 docker build -t $(DEFAULTIMAGE) .
 
 clean:
-	rm -f ./coverage.out ./out/*
-	docker rmi $(DEFAULTIMAGE)
+	rm -rf ./TestResults/* ./out/*
+	docker rmi $(DEFAULTIMAGE) || true
