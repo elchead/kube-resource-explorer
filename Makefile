@@ -53,7 +53,8 @@ DEFAULTIMAGE ?= dibi/kube-resource-explorer:$(VERSION)
 all: clean test cover build
 
 test:
-	$(GOTEST) -v -coverprofile=TestResults/coverage.txt ./...
+	$(shell mkdir TestResults)
+	$(GOTEST) -v -coverprofile=TestResults/coverage.out ./...
 
 cover: test
 	$(GOCOVER) -func=TestResults/coverage.out
