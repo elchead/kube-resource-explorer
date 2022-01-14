@@ -9,7 +9,7 @@ import (
 	monitoring "cloud.google.com/go/monitoring/apiv3"
 	log "github.com/Sirupsen/logrus"
 
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"golang.org/x/net/context"
