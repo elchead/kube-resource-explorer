@@ -26,6 +26,7 @@ Explore your kube resource usage and allocation.
 * `-project` - The GCloud project id (required for historical)
 * `-workers` - Number of workers to run for historical
 * `-csv` - Export results to CSV file
+* `-version` - Print the binary version
 
 To use the historical functionality you must set the
 `GOOGLE_APPLICATION_CREDENTIALS` environment variable. See below for more
