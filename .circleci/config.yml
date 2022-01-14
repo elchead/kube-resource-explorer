@@ -30,25 +30,4 @@ jobs:
             done
       - store_artifacts:
           path: ./out
-  release:
-    docker:
-      - image: cibuilds/github:0.10
-    steps:
-      - attach_workspace:
-          at: ./out
-      - run:
-          name: "Publish Release on GitHub"
-          command: |
-            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} ./out/
 
-workflows:
-  version: 2
-  build-workflow:
-    jobs:
-      - build
-      - release:
-          requires:
-            - build
-          filters:
-            branches:
-              only: master
