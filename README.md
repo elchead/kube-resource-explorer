@@ -1,6 +1,6 @@
 # Resource Explorer
 
-[![CircleCI](https://circleci.com/gh/dabeck/kube-resource-explorer.svg?style=svg)](https://circleci.com/gh/dabeck/kube-resource-explorer)
+[![CircleCI](https://circleci.com/gh/dabeck/kube-resource-explorer/tree/master.svg?style=svg)](https://circleci.com/gh/dabeck/kube-resource-explorer/tree/master)
 
 Explore your kube resource usage and allocation.
 

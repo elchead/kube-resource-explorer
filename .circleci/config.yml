@@ -38,3 +38,19 @@ jobs:
             done
       - store_artifacts:
           path: ./out
+  publish-github-release:
+    docker:
+      - image: cibuilds/github:0.10
+    requires:
+      - build
+    filters:
+      branches:
+        only: master
+    steps:
+      - attach_workspace:
+          at: ./out
+      - run:
+          name: "Publish Release on GitHub"
+          command: |
+            VERSION=$(git rev-parse --short HEAD)
+            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} ./out/
