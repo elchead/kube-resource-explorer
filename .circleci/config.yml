@@ -24,7 +24,7 @@ jobs:
             make test
             make cover
       - store_test_results:
-          path: ./TestResults/*
+          path: ./TestResults
       - run:
           name: Build
           command: |
