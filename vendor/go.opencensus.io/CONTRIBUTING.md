@@ -22,3 +22,42 @@ use GitHub pull requests for this purpose. Consult [GitHub Help] for more
 information on using pull requests.
 
 [GitHub Help]: https://help.github.com/articles/about-pull-requests/
+
+## Instructions
+
+Fork the repo, checkout the upstream repo to your GOPATH by:
+
+```
+$ go get -d go.opencensus.io
+```
+
+Add your fork as an origin:
+
+```
+cd $(go env GOPATH)/src/go.opencensus.io
+git remote add fork git@github.com:YOUR_GITHUB_USERNAME/opencensus-go.git
+```
+
+Run tests:
+
+```
+$ make install-tools  # Only first time.
+$ make
+```
+
+Checkout a new branch, make modifications and push the branch to your fork:
+
+```
+$ git checkout -b feature
+# edit files
+$ git commit
+$ git push fork feature
+```
+
+Open a pull request against the main opencensus-go repo.
+
+## General Notes
+This project uses Appveyor and Travis for CI.
+
+The dependencies are managed with `go mod` if you work with the sources under your
+`$GOPATH` you need to set the environment variable `GO111MODULE=on`.
