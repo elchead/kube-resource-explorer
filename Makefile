@@ -62,7 +62,7 @@ cover: test
 
 build:
 	CGO_ENABLED=0 GOOS=$(PLATFORM) GOARCH=$(ARCH) GO111MODULE=on\
-		go build -ldflags "-X main.GitCommit=${GIT_COMMIT}" -a -installsuffix cgo -o ./out/kube-resource-explorer ./cmd/kube-resource-explorer
+		go build -ldflags "-X main.GitCommit=${GIT_COMMIT}" -a -installsuffix cgo -o ./out/kube-resource-explorer-$(PLATFORM)-$(ARCH) ./cmd/kube-resource-explorer
 
 install:
 	CGO_ENABLED=0 GOOS=$(PLATFORM) GOARCH=$(ARCH) GO111MODULE=on\
