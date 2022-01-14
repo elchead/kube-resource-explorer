@@ -50,7 +50,7 @@ DEFAULTIMAGE ?= dibi/kube-resource-explorer:$(VERSION)
 
 .PHONY: all
 
-all: clean test cover build
+all: clean test cover build install
 
 test:
 	$(shell mkdir TestResults)
@@ -67,6 +67,10 @@ build:
 install:
 	CGO_ENABLED=0 GOOS=$(PLATFORM) GOARCH=$(ARCH) GO111MODULE=on\
 		go install -ldflags "-X main.GitCommit=${GIT_COMMIT}" -a -installsuffix cgo ./cmd/kube-resource-explorer
+
+run:
+	CGO_ENABLED=0 GOOS=$(PLATFORM) GOARCH=$(ARCH) GO111MODULE=on\
+		go run -ldflags "-X main.GitCommit=${GIT_COMMIT}" -a -installsuffix cgo ./cmd/kube-resource-explorer
 
 package:
 	DOCKER_BUILDKIT=1 docker build -t $(DEFAULTIMAGE) .
