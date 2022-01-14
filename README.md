@@ -1,23 +1,21 @@
-Resource Explorer
-================
+# Resource Explorer
 
-[![CircleCI](https://circleci.com/gh/dpetzold/kube-resource-explorer.svg?style=svg)](https://circleci.com/gh/dpetzold/kube-resource-explorer)
-
+[![CircleCI](https://circleci.com/gh/dabeck/kube-resource-explorer.svg?style=svg)](https://circleci.com/gh/dabeck/kube-resource-explorer)
 
 Explore your kube resource usage and allocation.
 
 * Display historical statistical resource usage from StackDriver.
 
-  https://github.com/kubernetes/kubernetes/issues/55046
+  <https://github.com/kubernetes/kubernetes/issues/55046>
 
 * List resource QoS allocation to pods in a cluster. Inspired by:
 
-  https://github.com/kubernetes/kubernetes/issues/17512
-
+  <https://github.com/kubernetes/kubernetes/issues/17512>
 
 ## Usage
 
-## Command Line Options                                                                                                
+### Command Line Options
+
 * `-namespace` - Limit the query to the specified namespace (defaults to all)
 * `-sort` - Field to sort by
 * `-reverse` - Reserve the sort order
@@ -33,29 +31,32 @@ To use the historical functionality you must set the
 `GOOGLE_APPLICATION_CREDENTIALS` environment variable. See below for more
 information:
 
-https://cloud.google.com/monitoring/docs/reference/libraries
+<https://cloud.google.com/monitoring/docs/reference/libraries>
 
+### Run
 
-## Run
-```
-docker run -it \
-    -v${HOME}/.kube:/.kube \
-    -v${HOME}/.config/gcloud:/.config/gcloud \
-    -v/etc/ssl/certs:/etc/ssl/certs \
-    dpetzold/kube-resource-explorer
+```sh
+make run
 ```
 
-## Build
+### Build
+
+```sh
+make build
 ```
-go get github.com/dpetzold/kube-resource-explorer/cmd/kube-resource-explorer
+
+### Build + Install
+
+```sh
+make
 ```
 
 ## Example output
 
 Show aggregate resource requests and limits. This is the same information
-displayed by `kubectl describe nodes` but in a easier to view format. 
+displayed by `kubectl describe nodes` but in a easier to view format.
 
-```
+```sh
 $ kube-resource-explorer -namespace kube-system -reverse -sort MemReq
 Namespace    Name                                                              CpuReq       CpuReq%  CpuLimit    CpuLimit%  MemReq         MemReq%  MemLimit       MemLimit%
 ---------    ----                                                              ------       -------  --------    ---------  ------         -------  --------       ---------
@@ -90,7 +91,7 @@ mode in the requested duration per container. The average is displayed when
 cpu is requested. For memory the mode is displayed (mode is the most common
 occurring value in the set).
 
-```
+```sh
 $ kube-resource-explorer -historical -duration 4h -mem -sort MemoryMode -reverse -namespace kube-system -project myprojectid
 Pod/Container                                                     Last    Min     Max     Mode
 -------------------------------------------------------------     ------  ------  ------  --------
@@ -118,7 +119,7 @@ fluentd-gcp-v2.0.9-4qkwk/fluentd-gcp                              144Mi   126Mi 
 Results shown are for a period of 4h0m0s. 2,400 data points were evaluted.
 ```
 
-```
+```sh
 $ kube-resource-explorer -historical -duration 4h -cpu -sort CpuMax -reverse -namespace kube-system -project myproj
 ectid
 Pod/Container                                                     Last    Min     Max     Avg
