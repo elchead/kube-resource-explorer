@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dpetzold/kube-resource-explorer/pkg/kube"
+	"github.com/dabeck/kube-resource-explorer/pkg/kube"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"

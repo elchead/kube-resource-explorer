@@ -1,4 +1,4 @@
-module github.com/dpetzold/kube-resource-explorer
+module github.com/dabeck/kube-resource-explorer
 
 go 1.17
 
