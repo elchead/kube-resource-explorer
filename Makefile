@@ -52,6 +52,13 @@ DEFAULTIMAGE ?= dibi/kube-resource-explorer:$(VERSION)
 
 all: clean build
 
+test:
+	$(GOTEST) -v -coverprofile=TestResults/coverage.txt ./...
+
+cover: test
+	$(GOCOVER) -func=TestResults/coverage.out
+	$(GOCOVER) -html=TestResults/coverage.out
+
 build:
 	CGO_ENABLED=0 GOOS=$(PLATFORM) GOARCH=$(ARCH) GO111MODULE=on\
 		go build -ldflags "-X main.GitCommit=${GIT_COMMIT}" -a -installsuffix cgo -o ./out/kube-resource-explorer ./cmd/kube-resource-explorer
