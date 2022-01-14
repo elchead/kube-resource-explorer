@@ -50,7 +50,7 @@ DEFAULTIMAGE ?= dibi/kube-resource-explorer:$(VERSION)
 
 .PHONY: all
 
-all: clean build
+all: clean test cover build
 
 test:
 	$(GOTEST) -v -coverprofile=TestResults/coverage.txt ./...
