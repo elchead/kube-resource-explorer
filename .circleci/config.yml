@@ -28,5 +28,13 @@ jobs:
       - run:
           name: Build
           command: |
-            make build
+            PLATFORMS=(darwin linux windows)
+            ARCHES=(amd64 arm64)
 
+            for platform in "${PLATFORMS[@]}"; do
+              for arch in "${ARCHES[@]}"; do
+                ARCH=$arch PLATFORM=$platform make build
+              done
+            done
+      - store_artifacts:
+          path: ./out
