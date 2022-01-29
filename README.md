@@ -1,5 +1,7 @@
 # Resource Explorer
 
+Note: This fork doesn't use Google cloud resources and has removed this functionality.
+
 [![CircleCI](https://circleci.com/gh/dabeck/kube-resource-explorer/tree/master.svg?style=svg)](https://circleci.com/gh/dabeck/kube-resource-explorer/tree/master)
 
 Explore your kube resource usage and allocation.
@@ -19,20 +21,8 @@ Explore your kube resource usage and allocation.
 * `-namespace` - Limit the query to the specified namespace (defaults to all)
 * `-sort` - Field to sort by
 * `-reverse` - Reserve the sort order
-* `-historical` - Display historical resource data
-* `-cpu` - Show historical cpu data
-* `-mem` - Show historical memory data
-* `-duration` - The duration to use for historical data (default to 4h)
-* `-project` - The GCloud project id (required for historical)
-* `-workers` - Number of workers to run for historical
 * `-csv` - Export results to CSV file
 * `-version` - Print the binary version
-
-To use the historical functionality you must set the
-`GOOGLE_APPLICATION_CREDENTIALS` environment variable. See below for more
-information:
-
-<https://cloud.google.com/monitoring/docs/reference/libraries>
 
 ### Run
 
@@ -58,93 +48,39 @@ Show aggregate resource requests and limits. This is the same information
 displayed by `kubectl describe nodes` but in a easier to view format.
 
 ```sh
-$ kube-resource-explorer -namespace kube-system -reverse -sort MemReq
-Namespace    Name                                                              CpuReq       CpuReq%  CpuLimit    CpuLimit%  MemReq         MemReq%  MemLimit       MemLimit%
----------    ----                                                              ------       -------  --------    ---------  ------         -------  --------       ---------
-kube-system  kube-proxy-gke-project-default-pool-175a4a05-bv59/kube-proxy      100m         10%      0m          0%         0Mi            0%       0Mi            0%
-kube-system  event-exporter-v0.1.7-5c4d9556cf-kf4tf/prometheus-to-sd-exporter  0m           0%       0m          0%         0Mi            0%       0Mi            0%
-kube-system  fluentd-gcp-v2.0.9-jmtpw/prometheus-to-sd-exporter                0m           0%       0m          0%         0Mi            0%       0Mi            0%
-kube-system  fluentd-gcp-v2.0.9-4qkwk/prometheus-to-sd-exporter                0m           0%       0m          0%         0Mi            0%       0Mi            0%
-kube-system  kube-proxy-gke-project-default-pool-175a4a05-mshh/kube-proxy      100m         10%      0m          0%         0Mi            0%       0Mi            0%
-kube-system  heapster-v1.4.3-74b5bd94bb-fz8hd/prom-to-sd                       0m           0%       0m          0%         0Mi            0%       0Mi            0%
-kube-system  fluentd-gcp-v2.0.9-tw9vk/prometheus-to-sd-exporter                0m           0%       0m          0%         0Mi            0%       0Mi            0%
-kube-system  event-exporter-v0.1.7-5c4d9556cf-kf4tf/event-exporter             0m           0%       0m          0%         0Mi            0%       0Mi            0%
-kube-system  kube-proxy-gke-project-default-pool-175a4a05-ntfw/kube-proxy      100m         10%      0m          0%         0Mi            0%       0Mi            0%
-kube-system  kube-dns-autoscaler-244676396-xzgs4/autoscaler                    20m          2%       0m          0%         10Mi           0%       0Mi            0%
-kube-system  kube-dns-323615064-8nxfl/sidecar                                  10m          1%       0m          0%         20Mi           0%       0Mi            0%
-kube-system  kube-dns-323615064-8nxfl/dnsmasq                                  150m         15%      0m          0%         20Mi           0%       0Mi            0%
-kube-system  l7-default-backend-1044750973-kqh98/default-http-backend          10m          1%       10m         1%         20Mi           0%       20Mi           0%
-kube-system  kube-dns-323615064-8nxfl/kubedns                                  100m         10%      0m          0%         70Mi           2%       170Mi          6%
-kube-system  heapster-v1.4.3-74b5bd94bb-fz8hd/heapster-nanny                   50m          5%       50m         5%         90Mi           3%       90Mi           3%
-kube-system  kubernetes-dashboard-768854d6dc-jh292/kubernetes-dashboard        100m         10%      100m        10%        100Mi          3%       300Mi          11%
-kube-system  fluentd-gcp-v2.0.9-jmtpw/fluentd-gcp                              100m         10%      0m          0%         200Mi          7%       300Mi          11%
-kube-system  fluentd-gcp-v2.0.9-tw9vk/fluentd-gcp                              100m         10%      0m          0%         200Mi          7%       300Mi          11%
-kube-system  fluentd-gcp-v2.0.9-4qkwk/fluentd-gcp                              100m         10%      0m          0%         200Mi          7%       300Mi          11%
-kube-system  heapster-v1.4.3-74b5bd94bb-fz8hd/heapster                         88m          9%       88m         9%         204Mi          7%       204Mi          7%
----------    ----                                                              ------       -------  --------    ---------  ------         -------  --------       ---------
-Total                                                                          1128m/2820m  40%      248m/2820m  8%         1134Mi/7936Mi  14%      1684Mi/7936Mi  21%
-```
+$ kube-resource-explorer -reverse -sort MemReq
+Node        Namespace                 Name                                                                       CpuReq       CpuReq%  CpuLimit     CpuLimit%  MemReq          MemReq%  MemLimit        MemLimit%  Pod Age
+----        ---------                 ----                                                                       ------       -------  --------     ---------  ------          -------  --------        ---------  -------
+local-node  cattle-monitoring-system  pushprox-k3s-server-proxy-f4f5d4874-689xb/pushprox-proxy                   0m           0%       0m           0%         0Mi             0%       0Mi             0%         3402h30m48s
+local-node  cattle-fleet-system       fleet-controller-974d9cc9f-csf66/fleet-controller                          0m           0%       0m           0%         0Mi             0%       0Mi             0%         3402h41m49s
+local-node  cattle-fleet-system       gitjob-5778966b7c-jmtkr/gitjob                                             0m           0%       0m           0%         0Mi             0%       0Mi             0%         3402h41m49s
+local-node  cattle-logging-system     rancher-logging-d9bf878c6-7nqxg/rancher-logging                            0m           0%       0m           0%         0Mi             0%       0Mi             0%         3402h28m55s
+local-node  istio-system              kiali-7c4c559b9f-7vzdg/kiali                                               0m           0%       0m           0%         0Mi             0%       0Mi             0%         3402h28m13s
+local-node  default                   gentoo-7b759fdbf8-7gcgh/container-0                                        0m           0%       0m           0%         0Mi             0%       0Mi             0%         1318h55m51s
+local-node  cattle-logging-system     rancher-logging-fluentd-0/config-reloader                                  0m           0%       0m           0%         0Mi             0%       0Mi             0%         3402h28m33s
+local-node  cattle-logging-system     rancher-logging-k3s-journald-aggregator-2rbq2/fluentbit                    0m           0%       0m           0%         0Mi             0%       0Mi             0%         3402h28m55s
+local-node  cattle-system             rancher-webhook-7f84b74ddb-rrj7w/rancher-webhook                           0m           0%       0m           0%         0Mi             0%       0Mi             0%         3402h41m29s
+local-node  cattle-monitoring-system  rancher-monitoring-prometheus-adapter-77568b975-2fxq6/prometheus-adapter   0m           0%       0m           0%         0Mi             0%       0Mi             0%         3402h30m48s
+local-node  cattle-monitoring-system  rancher-monitoring-grafana-8686947796-zw2xk/grafana-proxy                  0m           0%       0m           0%         0Mi             0%       0Mi             0%         3402h30m48s
+local-node  cattle-monitoring-system  rancher-monitoring-grafana-8686947796-zw2xk/grafana-sc-dashboard           0m           0%       0m           0%         0Mi             0%       0Mi             0%         3402h30m48s
+local-node  cattle-monitoring-system  prometheus-rancher-monitoring-prometheus-0/prometheus-proxy                0m           0%       0m           0%         0Mi             0%       0Mi             0%         3402h30m40s
+local-node  cattle-monitoring-system  pushprox-k3s-server-client-cfqdm/pushprox-client                           0m           0%       0m           0%         0Mi             0%       0Mi             0%         3402h30m48s
+local-node  cattle-fleet-system       fleet-agent-b94869475-bfb9v/fleet-agent                                    0m           0%       0m           0%         0Mi             0%       0Mi             0%         3402h41m20s
+local-node  cattle-monitoring-system  rancher-monitoring-prometheus-node-exporter-dd968/node-exporter            100m         1%       200m         3%         30Mi            0%       50Mi            0%         3402h30m48s
+local-node  cattle-logging-system     rancher-logging-fluentbit-42ks2/fluent-bit                                 100m         1%       200m         3%         47Mi            0%       95Mi            0%         3402h28m33s
+local-node  cattle-monitoring-system  alertmanager-rancher-monitoring-alertmanager-0/config-reloader             100m         1%       100m         1%         50Mi            0%       50Mi            0%         3402h30m40s
+local-node  cattle-monitoring-system  prometheus-rancher-monitoring-prometheus-0/config-reloader                 100m         1%       100m         1%         50Mi            0%       50Mi            0%         3402h30m40s
+local-node  kube-system               coredns-7448499f4d-rq7mp/coredns                                           100m         1%       0m           0%         70Mi            0%       170Mi           0%         3402h42m23s
+local-node  cattle-logging-system     rancher-logging-fluentd-0/fluentd                                          500m         8%       1000m        16%        95Mi            0%       381Mi           1%         3402h28m33s
+local-node  cattle-monitoring-system  rancher-monitoring-operator-754bcd8cb4-hqpjb/rancher-monitoring            100m         1%       200m         3%         100Mi           0%       500Mi           1%         3402h30m48s
+local-node  cattle-monitoring-system  rancher-monitoring-grafana-8686947796-zw2xk/grafana                        100m         1%       200m         3%         100Mi           0%       200Mi           0%         3402h30m48s
+local-node  cattle-monitoring-system  alertmanager-rancher-monitoring-alertmanager-0/alertmanager                100m         1%       1000m        16%        100Mi           0%       500Mi           1%         3402h30m40s
+local-node  istio-system              istio-egressgateway-9c86c49bb-nth6x/istio-proxy                            100m         1%       2000m        33%        128Mi           0%       1024Mi          3%         3402h27m24s
+local-node  istio-system              istio-ingressgateway-5d84c54d96-sk4vt/istio-proxy                          100m         1%       2000m        33%        128Mi           0%       1024Mi          3%         3402h27m24s
+local-node  cattle-monitoring-system  rancher-monitoring-kube-state-metrics-744b9448f4-gbw5j/kube-state-metrics  100m         1%       100m         1%         130Mi           0%       200Mi           0%         3402h30m48s
+local-node  cattle-monitoring-system  prometheus-rancher-monitoring-prometheus-0/prometheus                      750m         12%      1000m        16%        1750Mi          5%       2500Mi          7%         3402h30m40s
+local-node  istio-system              istiod-5f95cf9cbf-248nm/discovery                                          500m         8%       0m           0%         2048Mi          6%       0Mi             0%         3402h27m36s
+----        ---------                 ----                                                                       ------       -------  --------     ---------  ------          -------  --------        ---------  -------
+Total                                                                                                            2850m/6000m  47%      8100m/6000m  135%       4827Mi/31666Mi  15%      6744Mi/31666Mi  21%
 
-Display historical statistical resource usage from StackDriver. This will
-evaluate the TimeSeries data from StackDriver and show the latest value (the
-most current data point), minimum value, maximum value and the average or the
-mode in the requested duration per container. The average is displayed when
-cpu is requested. For memory the mode is displayed (mode is the most common
-occurring value in the set).
-
-```sh
-$ kube-resource-explorer -historical -duration 4h -mem -sort MemoryMode -reverse -namespace kube-system -project myprojectid
-Pod/Container                                                     Last    Min     Max     Mode
--------------------------------------------------------------     ------  ------  ------  --------
-l7-default-backend-1044750973-kqh98/default-http-backend          2Mi     2Mi     2Mi     2Mi
-kube-dns-323615064-8nxfl/dnsmasq                                  6Mi     6Mi     6Mi     6Mi
-event-exporter-v0.1.7-5c4d9556cf-kf4tf/prometheus-to-sd-exporter  6Mi     6Mi     6Mi     6Mi
-heapster-v1.4.3-74b5bd94bb-fz8hd/prom-to-sd                       7Mi     7Mi     7Mi     7Mi
-fluentd-gcp-v2.0.9-4qkwk/prometheus-to-sd-exporter                8Mi     8Mi     8Mi     8Mi
-fluentd-gcp-v2.0.9-tw9vk/prometheus-to-sd-exporter                9Mi     9Mi     9Mi     9Mi
-fluentd-gcp-v2.0.9-jmtpw/prometheus-to-sd-exporter                9Mi     9Mi     9Mi     9Mi
-kube-dns-323615064-8nxfl/kubedns                                  10Mi    10Mi    10Mi    10Mi
-heapster-v1.4.3-74b5bd94bb-fz8hd/heapster-nanny                   10Mi    10Mi    10Mi    10Mi
-kube-dns-autoscaler-244676396-xzgs4/autoscaler                    11Mi    11Mi    11Mi    11Mi
-kube-dns-323615064-8nxfl/sidecar                                  13Mi    12Mi    13Mi    13Mi
-kube-proxy-gke-project-default-pool-175a4a05-bv59/kube-proxy      15Mi    15Mi    15Mi    15Mi
-event-exporter-v0.1.7-5c4d9556cf-kf4tf/event-exporter             15Mi    15Mi    15Mi    15Mi
-kube-proxy-gke-project-default-pool-175a4a05-ntfw/kube-proxy      18Mi    18Mi    18Mi    18Mi
-kube-proxy-gke-project-default-pool-175a4a05-mshh/kube-proxy      18Mi    18Mi    19Mi    18Mi
-kubernetes-dashboard-768854d6dc-jh292/kubernetes-dashboard        31Mi    31Mi    31Mi    31Mi
-heapster-v1.4.3-74b5bd94bb-fz8hd/heapster                         33Mi    32Mi    39Mi    34Mi
-fluentd-gcp-v2.0.9-jmtpw/fluentd-gcp                              138Mi   136Mi   139Mi   138Mi
-fluentd-gcp-v2.0.9-tw9vk/fluentd-gcp                              136Mi   130Mi   162Mi   162Mi
-fluentd-gcp-v2.0.9-4qkwk/fluentd-gcp                              144Mi   126Mi   181Mi   178Mi
-
-Results shown are for a period of 4h0m0s. 2,400 data points were evaluted.
-```
-
-```sh
-$ kube-resource-explorer -historical -duration 4h -cpu -sort CpuMax -reverse -namespace kube-system -project myproj
-ectid
-Pod/Container                                                     Last    Min     Max     Avg
--------------------------------------------------------------     ------  ------  ------  --------                                     
-heapster-v1.4.3-74b5bd94bb-fz8hd/prom-to-sd                       0m      0m      0m      0m                                           
-event-exporter-v0.1.7-5c4d9556cf-kf4tf/prometheus-to-sd-exporter  0m      0m      0m      0m                                           
-fluentd-gcp-v2.0.9-jmtpw/prometheus-to-sd-exporter                0m      0m      0m      0m                                           
-fluentd-gcp-v2.0.9-4qkwk/prometheus-to-sd-exporter                0m      0m      0m      0m                                           
-kube-dns-323615064-8nxfl/kubedns                                  0m      0m      0m      0m                                           
-kube-dns-323615064-8nxfl/dnsmasq                                  0m      0m      0m      0m                                           
-kubernetes-dashboard-768854d6dc-jh292/kubernetes-dashboard        0m      0m      0m      0m                                           
-kube-dns-autoscaler-244676396-xzgs4/autoscaler                    0m      0m      0m      0m                                           
-l7-default-backend-1044750973-kqh98/default-http-backend          0m      0m      0m      0m                                           
-heapster-v1.4.3-74b5bd94bb-fz8hd/heapster-nanny                   0m      0m      0m      0m                                           
-fluentd-gcp-v2.0.9-tw9vk/prometheus-to-sd-exporter                0m      0m      0m      0m                                           
-event-exporter-v0.1.7-5c4d9556cf-kf4tf/event-exporter             0m      0m      0m      0m                                           
-heapster-v1.4.3-74b5bd94bb-fz8hd/heapster                         1m      1m      1m      1m                                           
-kube-dns-323615064-8nxfl/sidecar                                  1m      0m      1m      0m                                           
-kube-proxy-gke-project-default-pool-175a4a05-ntfw/kube-proxy      1m      1m      2m      1m                                           
-kube-proxy-gke-project-default-pool-175a4a05-bv59/kube-proxy      1m      1m      2m      1m                                           
-kube-proxy-gke-project-default-pool-175a4a05-mshh/kube-proxy      1m      1m      2m      1m                                           
-fluentd-gcp-v2.0.9-tw9vk/fluentd-gcp                              6m      5m      7m      5m                                           
-fluentd-gcp-v2.0.9-4qkwk/fluentd-gcp                              6m      5m      12m     6m                                           
-fluentd-gcp-v2.0.9-jmtpw/fluentd-gcp                              28m     23m     32m     28m                                          
-
-Results shown are for a period of 4h0m0s. 2,400 data points were evaluted.                                                             
 ```
