@@ -107,6 +107,7 @@ func (k *KubeClient) NodeResources(namespace, nodeName string) (resources []*Con
 			memoryLimit := NewMemoryResource(_memoryLimit.Value())
 
 			resources = append(resources, &ContainerResources{
+				NodeName:						nodeName,
 				Name:               fmt.Sprintf("%s/%s", pod.GetName(), container.Name),
 				Namespace:          pod.GetNamespace(),
 				CpuReq:             cpuReq,

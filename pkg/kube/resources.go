@@ -54,6 +54,7 @@ func (r *CpuResource) ToQuantity() *resource.Quantity {
 }
 
 type ContainerResources struct {
+	NodeName					 string
 	Name               string
 	Namespace          string
 	CpuReq             *CpuResource

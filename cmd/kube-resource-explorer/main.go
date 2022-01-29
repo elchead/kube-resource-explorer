@@ -7,11 +7,9 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"time"
 
-	"github.com/dabeck/kube-resource-explorer/pkg/kube"
+	"github.com/morganhoward/kube-resource-explorer/pkg/kube"
 
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/tools/clientcmd"
@@ -28,21 +26,10 @@ func homeDir() string {
 
 func main() {
 
-	default_duration, err := time.ParseDuration("4h")
-	if err != nil {
-		panic(err.Error())
-	}
-
 	var (
 		namespace  = flag.String("namespace", "", "filter by namespace (defaults to all)")
 		sort       = flag.String("sort", "CpuReq", "field to sort by")
 		reverse    = flag.Bool("reverse", false, "reverse sort output")
-		historical = flag.Bool("historical", false, "show historical info")
-		duration   = flag.Duration("duration", default_duration, "specify the duration")
-		mem_only   = flag.Bool("mem", false, "show historical memory info")
-		cpu_only   = flag.Bool("cpu", false, "show historical cpu info")
-		project    = flag.String("project", "", "Project id")
-		workers    = flag.Int("workers", 5, "Number of workers for historical")
 		csv        = flag.Bool("csv", false, "Export results to csv file")
 		version    = flag.Bool("version", false, "show binary version")
 		kubeconfig *string
@@ -75,41 +62,12 @@ func main() {
 
 	k := kube.NewKubeClient(clientset)
 
-	if *historical {
+	r := kube.ContainerResources{}
 
-		if *project == "" {
-			fmt.Printf("-project is required for historical data\n")
-			os.Exit(1)
-		}
-
-		m := kube.ContainerMetrics{}
-
-		if !m.Validate(*sort) {
-			fmt.Printf("\"%s\" is not a valid field. Possible values are:\n\n%s\n", *sort, strings.Join(kube.GetFields(&m), ", "))
-			os.Exit(1)
-		}
-
-		var resourceName v1.ResourceName
-
-		if *mem_only {
-			resourceName = v1.ResourceMemory
-		} else if *cpu_only {
-			resourceName = v1.ResourceCPU
-		} else {
-			panic("Unknown metric type")
-		}
-
-		k.Historical(*project, *namespace, *workers, resourceName, *duration, *sort, *reverse, *csv)
-
-	} else {
-
-		r := kube.ContainerResources{}
-
-		if !r.Validate(*sort) {
-			fmt.Printf("\"%s\" is not a valid field. Possible values are:\n\n%s\n", *sort, strings.Join(kube.GetFields(r), ", "))
-			os.Exit(1)
-		}
-
-		k.ResourceUsage(*namespace, *sort, *reverse, *csv)
+	if !r.Validate(*sort) {
+		fmt.Printf("\"%s\" is not a valid field. Possible values are:\n\n%s\n", *sort, strings.Join(kube.GetFields(r), ", "))
+		os.Exit(1)
 	}
+
+	k.ResourceUsage(*namespace, *sort, *reverse, *csv)
 }

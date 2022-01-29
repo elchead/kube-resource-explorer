@@ -12,7 +12,7 @@ import (
 	"github.com/ryanuber/columnize"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
@@ -88,8 +88,8 @@ func FormatResourceUsage(capacity v1.ResourceList, resources []*ContainerResourc
 	})
 
 	rows = append(rows, [][]string{
-		{"Namespace", "Name", "CpuReq", "CpuReq%", "CpuLimit", "CpuLimit%", "MemReq", "MemReq%", "MemLimit", "MemLimit%"},
-		{"---------", "----", "------", "-------", "--------", "---------", "------", "-------", "--------", "---------"},
+		{"Node", "Namespace", "Name", "CpuReq", "CpuReq%", "CpuLimit", "CpuLimit%", "MemReq", "MemReq%", "MemLimit", "MemLimit%"},
+		{"----", "---------", "----", "------", "-------", "--------", "---------", "------", "-------", "--------", "---------"},
 	}...)
 
 	totalCpuReq, totalCpuLimit := NewCpuResource(0), NewCpuResource(0)
@@ -102,6 +102,7 @@ func FormatResourceUsage(capacity v1.ResourceList, resources []*ContainerResourc
 		totalMemoryLimit.Add(*u.MemLimit.ToQuantity())
 
 		rows = append(rows, []string{
+			u.NodeName,
 			u.Namespace,
 			u.Name,
 			u.CpuReq.String(),
@@ -115,13 +116,14 @@ func FormatResourceUsage(capacity v1.ResourceList, resources []*ContainerResourc
 		})
 	}
 
-	rows = append(rows, []string{"---------", "----", "------", "-------", "--------", "---------", "------", "-------", "--------", "---------"})
+	rows = append(rows, []string{"----", "---------", "----", "------", "-------", "--------", "---------", "------", "-------", "--------", "---------"})
 
 	cpuCapacity := NewCpuResource(capacity.Cpu().MilliValue())
 	memoryCapacity := NewMemoryResource(capacity.Memory().Value())
 
 	rows = append(rows, []string{
 		"Total",
+		"",
 		"",
 		fmt.Sprintf("%s/%s", totalCpuReq.String(), cpuCapacity.String()),
 		fmtPercent(totalCpuReq.calcPercentage(capacity.Cpu())),
