@@ -2,3 +2,6 @@ build
 kube-resource-explorer
 out
 TestResults
+.idea/
+.projectile/
+.vscode/
