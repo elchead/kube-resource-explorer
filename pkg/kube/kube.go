@@ -2,6 +2,7 @@ package kube
 
 import (
 	"fmt"
+	"time"
 
 	api_v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -107,7 +108,7 @@ func (k *KubeClient) NodeResources(namespace, nodeName string) (resources []*Con
 			memoryLimit := NewMemoryResource(_memoryLimit.Value())
 
 			resources = append(resources, &ContainerResources{
-				NodeName:						nodeName,
+				NodeName:           nodeName,
 				Name:               fmt.Sprintf("%s/%s", pod.GetName(), container.Name),
 				Namespace:          pod.GetNamespace(),
 				CpuReq:             cpuReq,
@@ -118,6 +119,7 @@ func (k *KubeClient) NodeResources(namespace, nodeName string) (resources []*Con
 				MemLimit:           memoryLimit,
 				PercentMemoryReq:   memoryReq.calcPercentage(capacity.Memory()),
 				PercentMemoryLimit: memoryLimit.calcPercentage(capacity.Memory()),
+				PodAge:             time.Since(pod.GetCreationTimestamp().Time),
 			})
 		}
 	}

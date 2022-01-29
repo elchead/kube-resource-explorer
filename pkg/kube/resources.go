@@ -2,8 +2,8 @@ package kube
 
 import (
 	"fmt"
-
 	"k8s.io/apimachinery/pkg/api/resource"
+	"time"
 )
 
 func calcPercentage(dividend, divisor int64) int64 {
@@ -54,7 +54,7 @@ func (r *CpuResource) ToQuantity() *resource.Quantity {
 }
 
 type ContainerResources struct {
-	NodeName					 string
+	NodeName           string
 	Name               string
 	Namespace          string
 	CpuReq             *CpuResource
@@ -65,6 +65,7 @@ type ContainerResources struct {
 	MemLimit           *MemoryResource
 	PercentMemoryReq   int64
 	PercentMemoryLimit int64
+	PodAge             time.Duration
 }
 
 func (r ContainerResources) Validate(field string) bool {

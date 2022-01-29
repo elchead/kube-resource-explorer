@@ -88,8 +88,8 @@ func FormatResourceUsage(capacity v1.ResourceList, resources []*ContainerResourc
 	})
 
 	rows = append(rows, [][]string{
-		{"Node", "Namespace", "Name", "CpuReq", "CpuReq%", "CpuLimit", "CpuLimit%", "MemReq", "MemReq%", "MemLimit", "MemLimit%"},
-		{"----", "---------", "----", "------", "-------", "--------", "---------", "------", "-------", "--------", "---------"},
+		{"Node", "Namespace", "Name", "CpuReq", "CpuReq%", "CpuLimit", "CpuLimit%", "MemReq", "MemReq%", "MemLimit", "MemLimit%", "Pod Age"},
+		{"----", "---------", "----", "------", "-------", "--------", "---------", "------", "-------", "--------", "---------", "-------"},
 	}...)
 
 	totalCpuReq, totalCpuLimit := NewCpuResource(0), NewCpuResource(0)
@@ -113,10 +113,11 @@ func FormatResourceUsage(capacity v1.ResourceList, resources []*ContainerResourc
 			fmtPercent(u.PercentMemoryReq),
 			u.MemLimit.String(),
 			fmtPercent(u.PercentMemoryLimit),
+			fmt.Sprintf("duration: %s", u.PodAge.Round(time.Second)),
 		})
 	}
 
-	rows = append(rows, []string{"----", "---------", "----", "------", "-------", "--------", "---------", "------", "-------", "--------", "---------"})
+	rows = append(rows, []string{"----", "---------", "----", "------", "-------", "--------", "---------", "------", "-------", "--------", "---------", "-------"})
 
 	cpuCapacity := NewCpuResource(capacity.Cpu().MilliValue())
 	memoryCapacity := NewMemoryResource(capacity.Memory().Value())
