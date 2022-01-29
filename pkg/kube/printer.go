@@ -113,7 +113,7 @@ func FormatResourceUsage(capacity v1.ResourceList, resources []*ContainerResourc
 			fmtPercent(u.PercentMemoryReq),
 			u.MemLimit.String(),
 			fmtPercent(u.PercentMemoryLimit),
-			fmt.Sprintf("duration: %s", u.PodAge.Round(time.Second)),
+			u.PodAge.Round(time.Second).String(),
 		})
 	}
 
