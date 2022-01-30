@@ -1,8 +1,11 @@
 package kube
 
 import (
+	"context"
 	"encoding/csv"
 	"fmt"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/metrics/pkg/client/clientset/versioned"
 	"log"
 	"os"
 	"sort"
@@ -81,60 +84,85 @@ func fmtPercent(p int64) string {
 	return fmt.Sprintf("%d%%", p)
 }
 
-func FormatResourceUsage(capacity v1.ResourceList, resources []*ContainerResources, field string, reverse bool) (rows [][]string) {
+func FormatResourceUsage(metricsclient *versioned.Clientset, nodes *v1.NodeList, capacity v1.ResourceList, resources []*ContainerResources, field string, reverse bool, nodesOnly bool) (rows [][]string) {
 
 	sort.Slice(resources, func(i, j int) bool {
 		return cmp(resources, field, i, j, reverse)
 	})
 
-	rows = append(rows, [][]string{
-		{"Node", "Namespace", "Name", "CpuReq", "CpuReq%", "CpuLimit", "CpuLimit%", "MemReq", "MemReq%", "MemLimit", "MemLimit%", "Pod Age"},
-		{"----", "---------", "----", "------", "-------", "--------", "---------", "------", "-------", "--------", "---------", "-------"},
-	}...)
+	if nodesOnly {
+		rows = append(rows, []string{"Node Name", "", "", "CPU", "", "Memory"})
+		rows = append(rows, []string{"-----", "", "", "---", "", "------"})
 
-	totalCpuReq, totalCpuLimit := NewCpuResource(0), NewCpuResource(0)
-	totalMemoryReq, totalMemoryLimit := NewMemoryResource(0), NewMemoryResource(0)
+		for _, node := range nodes.Items {
 
-	for _, u := range resources {
-		totalCpuReq.Add(*u.CpuReq.ToQuantity())
-		totalCpuLimit.Add(*u.CpuLimit.ToQuantity())
-		totalMemoryReq.Add(*u.MemReq.ToQuantity())
-		totalMemoryLimit.Add(*u.MemLimit.ToQuantity())
+			mc, err := metricsclient.MetricsV1beta1().NodeMetricses().Get(context.TODO(), node.GetName(), metav1.GetOptions{})
+			if err != nil {
+				panic(err.Error())
+			}
+
+			rows = append(rows, []string{
+				node.Name,
+				"",
+				"",
+				fmt.Sprintf("%d/%d", mc.Usage.Cpu().MilliValue(), node.Status.Allocatable.Cpu().MilliValue()),
+				"",
+				fmt.Sprintf("%vGi/%vGi", mc.Usage.Memory().ScaledValue(resource.Scale(9)), node.Status.Allocatable.Memory().ScaledValue(resource.Scale(9))),
+				"",
+			})
+		}
+	} else {
+
+		rows = append(rows, [][]string{
+			{"Node", "Namespace", "Name", "CpuReq", "CpuReq%", "CpuLimit", "CpuLimit%", "MemReq", "MemReq%", "MemLimit", "MemLimit%", "Pod Age"},
+			{"----", "---------", "----", "------", "-------", "--------", "---------", "------", "-------", "--------", "---------", "-------"},
+		}...)
+
+		totalCpuReq, totalCpuLimit := NewCpuResource(0), NewCpuResource(0)
+		totalMemoryReq, totalMemoryLimit := NewMemoryResource(0), NewMemoryResource(0)
+
+		for _, u := range resources {
+			totalCpuReq.Add(*u.CpuReq.ToQuantity())
+			totalCpuLimit.Add(*u.CpuLimit.ToQuantity())
+			totalMemoryReq.Add(*u.MemReq.ToQuantity())
+			totalMemoryLimit.Add(*u.MemLimit.ToQuantity())
+
+			rows = append(rows, []string{
+				u.NodeName,
+				u.Namespace,
+				u.Name,
+				u.CpuReq.String(),
+				fmtPercent(u.PercentCpuReq),
+				u.CpuLimit.String(),
+				fmtPercent(u.PercentCpuLimit),
+				u.MemReq.String(),
+				fmtPercent(u.PercentMemoryReq),
+				u.MemLimit.String(),
+				fmtPercent(u.PercentMemoryLimit),
+				u.PodAge.Round(time.Second).String(),
+			})
+		}
+
+		rows = append(rows, []string{"----", "---------", "----", "------", "-------", "--------", "---------", "------", "-------", "--------", "---------", "-------"})
+
+		cpuCapacity := NewCpuResource(capacity.Cpu().MilliValue())
+		memoryCapacity := NewMemoryResource(capacity.Memory().Value())
 
 		rows = append(rows, []string{
-			u.NodeName,
-			u.Namespace,
-			u.Name,
-			u.CpuReq.String(),
-			fmtPercent(u.PercentCpuReq),
-			u.CpuLimit.String(),
-			fmtPercent(u.PercentCpuLimit),
-			u.MemReq.String(),
-			fmtPercent(u.PercentMemoryReq),
-			u.MemLimit.String(),
-			fmtPercent(u.PercentMemoryLimit),
-			u.PodAge.Round(time.Second).String(),
+			"Total",
+			"",
+			"",
+			fmt.Sprintf("%s/%s", totalCpuReq.String(), cpuCapacity.String()),
+			fmtPercent(totalCpuReq.calcPercentage(capacity.Cpu())),
+			fmt.Sprintf("%s/%s", totalCpuLimit.String(), cpuCapacity.String()),
+			fmtPercent(totalCpuLimit.calcPercentage(capacity.Cpu())),
+			fmt.Sprintf("%s/%s", totalMemoryReq.String(), memoryCapacity.String()),
+			fmtPercent(totalMemoryReq.calcPercentage(capacity.Memory())),
+			fmt.Sprintf("%s/%s", totalMemoryLimit.String(), memoryCapacity.String()),
+			fmtPercent(totalMemoryLimit.calcPercentage(capacity.Memory())),
 		})
+
 	}
-
-	rows = append(rows, []string{"----", "---------", "----", "------", "-------", "--------", "---------", "------", "-------", "--------", "---------", "-------"})
-
-	cpuCapacity := NewCpuResource(capacity.Cpu().MilliValue())
-	memoryCapacity := NewMemoryResource(capacity.Memory().Value())
-
-	rows = append(rows, []string{
-		"Total",
-		"",
-		"",
-		fmt.Sprintf("%s/%s", totalCpuReq.String(), cpuCapacity.String()),
-		fmtPercent(totalCpuReq.calcPercentage(capacity.Cpu())),
-		fmt.Sprintf("%s/%s", totalCpuLimit.String(), cpuCapacity.String()),
-		fmtPercent(totalCpuLimit.calcPercentage(capacity.Cpu())),
-		fmt.Sprintf("%s/%s", totalMemoryReq.String(), memoryCapacity.String()),
-		fmtPercent(totalMemoryReq.calcPercentage(capacity.Memory())),
-		fmt.Sprintf("%s/%s", totalMemoryLimit.String(), memoryCapacity.String()),
-		fmtPercent(totalMemoryLimit.calcPercentage(capacity.Memory())),
-	})
 
 	return rows
 }

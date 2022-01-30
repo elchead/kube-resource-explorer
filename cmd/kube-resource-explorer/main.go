@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	metrics "k8s.io/metrics/pkg/client/clientset/versioned"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -32,6 +33,7 @@ func main() {
 		reverse    = flag.Bool("reverse", false, "reverse sort output")
 		csv        = flag.Bool("csv", false, "Export results to csv file")
 		version    = flag.Bool("version", false, "show binary version")
+		nodesOnly  = flag.Bool("nodes-only", false, "show binary version")
 		kubeconfig *string
 	)
 
@@ -60,6 +62,11 @@ func main() {
 		panic(err.Error())
 	}
 
+	metricsclient, err := metrics.NewForConfig(config)
+	if err != nil {
+		panic(err.Error())
+	}
+
 	k := kube.NewKubeClient(clientset)
 
 	r := kube.ContainerResources{}
@@ -69,5 +76,5 @@ func main() {
 		os.Exit(1)
 	}
 
-	k.ResourceUsage(*namespace, *sort, *reverse, *csv)
+	k.ResourceUsage(metricsclient, *namespace, *sort, *reverse, *csv, *nodesOnly)
 }

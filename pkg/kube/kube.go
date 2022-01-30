@@ -3,6 +3,7 @@ package kube
 import (
 	"context"
 	"fmt"
+	"k8s.io/metrics/pkg/client/clientset/versioned"
 	"time"
 
 	api_v1 "k8s.io/api/core/v1"
@@ -167,7 +168,7 @@ func (k *KubeClient) ClusterCapacity() (capacity api_v1.ResourceList, err error)
 	return capacity, nil
 }
 
-func (k *KubeClient) ResourceUsage(namespace, sort string, reverse bool, csv bool) {
+func (k *KubeClient) ResourceUsage(metricsclient *versioned.Clientset, namespace, sort string, reverse bool, csv bool, nodesOnly bool) {
 
 	resources, err := k.ContainerResources(namespace)
 	if err != nil {
@@ -179,7 +180,12 @@ func (k *KubeClient) ResourceUsage(namespace, sort string, reverse bool, csv boo
 		panic(err.Error())
 	}
 
-	rows := FormatResourceUsage(capacity, resources, sort, reverse)
+	nodes, err := k.clientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		panic(err.Error())
+	}
+
+	rows := FormatResourceUsage(metricsclient, nodes, capacity, resources, sort, reverse, nodesOnly)
 
 	if csv {
 		prefix := "kube-resource-usage"
