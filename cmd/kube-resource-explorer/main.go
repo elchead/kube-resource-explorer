@@ -3,13 +3,14 @@ package main
 import (
 	"flag"
 	"fmt"
-	metrics "k8s.io/metrics/pkg/client/clientset/versioned"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 
-	"github.com/morganhoward/kube-resource-explorer/pkg/kube"
+	metrics "k8s.io/metrics/pkg/client/clientset/versioned"
+
+	"github.com/elchead/kube-resource-explorer/pkg/kube"
 
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"

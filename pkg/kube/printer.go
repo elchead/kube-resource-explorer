@@ -4,13 +4,14 @@ import (
 	"context"
 	"encoding/csv"
 	"fmt"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/metrics/pkg/client/clientset/versioned"
 	"log"
 	"os"
 	"sort"
 	"strings"
 	"time"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/metrics/pkg/client/clientset/versioned"
 
 	"github.com/ryanuber/columnize"
 	"golang.org/x/text/language"
