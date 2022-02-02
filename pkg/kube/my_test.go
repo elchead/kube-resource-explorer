@@ -1,7 +1,6 @@
 package kube
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -9,10 +8,11 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/metrics/pkg/client/clientset/versioned"
 	metrics "k8s.io/metrics/pkg/client/clientset/versioned"
 )
 
@@ -33,8 +33,7 @@ func getClient(config *rest.Config) *KubeClient {
 	return NewKubeClient(clientset)
 }
 
-func TestNodesByMem(t *testing.T) {
-	config := getConfig()
+func getNodesListAndMetrics(config *rest.Config) (*v1.NodeList, *versioned.Clientset) {
 	k := getClient(config)
 
 	metricsclient, err := metrics.NewForConfig(config)
@@ -42,21 +41,62 @@ func TestNodesByMem(t *testing.T) {
 		panic(err.Error())
 	}
 
-	// resources, err := k.ContainerResources(namespace)
-	// if err != nil {
-	// 	panic(err.Error())
-	// }
-
-	// capacity, err := k.ClusterCapacity()
-	// if err != nil {
-	// 	panic(err.Error())
-	// }
-
-	nodes, err := k.clientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
+	nodes, err := k.NodeList()
 	if err != nil {
 		panic(err.Error())
 	}
-	res := GetNodesByUsage(nodes, metricsclient)
+	return nodes, metricsclient
+}
+
+func TestGetPodsByNode(t *testing.T) {
+	node := "shoot--oaas-live--play-worker-opt-z3-5b545-g7htk"
+	config := getConfig()
+	k := getClient(config)
+	res, _ := GetPodsByNode(*k.clientset, node, "play")
+	fmt.Println(res)
+	assert.Equal(t, true, false)
+
+}
+
+func TestGetNodeMemReq(t *testing.T) {
+	node := "shoot--oaas-live--play-worker-opt-z3-5b545-g7htk"
+	config := getConfig()
+	k := getClient(config)
+	res, _ := GetPodsByNode(*k.clientset, node, "play")
+	memReqs, memLim := GetPodsTotalMemRequestsAndLimits(res.Items)
+	assert.Equal(t, 0, memReqs)
+	assert.Equal(t, 0, memLim)
+
+}
+func TestGetNodeWithXUsage(t *testing.T) {
+	// config := getConfig()
+	// res := GetNodesByUsage(getNodesListAndMetrics(config))
+	nodes := []NodeStatus{{"low", 1, 10}, {"high", 6, 10}}
+	res := FilterNodesByUsage(nodes, 5)
+	assert.Contains(t, res, NodeStatus{"high", 6, 10})
+	assert.NotContains(t, res, NodeStatus{"low", 1, 10})
+}
+
+func TestFindIntensivePodOnCriticalNode(t *testing.T) {
+	config := getConfig()
+	nodes := GetNodesByUsage(getNodesListAndMetrics(config))
+	fmt.Println(nodes)
+	res := FilterNodesByUsage(nodes, 5)
+	criticalNode := res[0]
+
+	k := getClient(config)
+	namespace := ""
+	resources, err := k.ContainerResources(namespace)
+	if err != nil {
+		panic(err.Error())
+	}
+	pods := GetPodsByUsage(criticalNode.name, resources)
+	assert.Equal(t, "", pods[0].Name)
+}
+
+func TestNodesByMem(t *testing.T) {
+	config := getConfig()
+	res := GetNodesByUsage(getNodesListAndMetrics(config))
 	fmt.Println(res)
 	assert.NotEqual(t, len(res), 0)
 }
@@ -71,7 +111,7 @@ func TestGetPodsByUsage(t *testing.T) {
 		panic(err.Error())
 	}
 
-	nodes, err := k.clientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
+	nodes, err := k.NodeList()
 	if err != nil {
 		panic(err.Error())
 	}
