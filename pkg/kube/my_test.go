@@ -11,28 +11,36 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	metrics "k8s.io/metrics/pkg/client/clientset/versioned"
 )
 
-func TestNodesByMem(t *testing.T) {
+func getConfig() *rest.Config {
 	kubeconfig := filepath.Join(os.Getenv("HOME"), ".kube", "config")
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
 	if err != nil {
-		panic(err.Error())
+		panic(err)
 	}
+	return config
+}
 
+func getClient(config *rest.Config) *KubeClient {
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		panic(err.Error())
 	}
+	return NewKubeClient(clientset)
+}
+
+func TestNodesByMem(t *testing.T) {
+	config := getConfig()
+	k := getClient(config)
 
 	metricsclient, err := metrics.NewForConfig(config)
 	if err != nil {
 		panic(err.Error())
 	}
-
-	k := NewKubeClient(clientset)
 
 	// resources, err := k.ContainerResources(namespace)
 	// if err != nil {
@@ -54,18 +62,8 @@ func TestNodesByMem(t *testing.T) {
 }
 
 func TestGetPodsByUsage(t *testing.T) {
-	kubeconfig := filepath.Join(os.Getenv("HOME"), ".kube", "config")
-	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
-	if err != nil {
-		panic(err.Error())
-	}
-
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		panic(err.Error())
-	}
-
-	k := NewKubeClient(clientset)
+	config := getConfig()
+	k := getClient(config)
 
 	namespace := ""
 	resources, err := k.ContainerResources(namespace)
@@ -80,5 +78,5 @@ func TestGetPodsByUsage(t *testing.T) {
 	nodeName := nodes.Items[0].Name
 	res := GetPodsByUsage(nodeName, resources)
 	fmt.Println(*res[0])
-	assert.False(t, true)
+	assert.NotEmpty(t, res)
 }
