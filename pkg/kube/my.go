@@ -2,6 +2,8 @@ package kube
 
 import (
 	"context"
+	"os"
+	"path/filepath"
 	"sort"
 
 	corev1 "k8s.io/api/core/v1"
@@ -11,11 +13,48 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime"
 	runtimeresource "k8s.io/cli-runtime/pkg/resource"
+	"k8s.io/client-go/kubernetes"
 	clientset "k8s.io/client-go/kubernetes"
 	corev1client "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/rest"
+	metrics "k8s.io/metrics/pkg/client/clientset/versioned"
+
+	"k8s.io/client-go/tools/clientcmd"
 	resourcehelper "k8s.io/kubectl/pkg/util/resource"
 	"k8s.io/metrics/pkg/client/clientset/versioned"
 )
+
+func GetConfig() *rest.Config {
+	kubeconfig := filepath.Join(os.Getenv("HOME"), ".kube", "config")
+	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
+	if err != nil {
+		panic(err)
+	}
+	return config
+}
+
+func GetClient(config *rest.Config) *KubeClient {
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		panic(err.Error())
+	}
+	return NewKubeClient(clientset)
+}
+
+func GetNodesListAndMetrics(config *rest.Config) (*v1.NodeList, *versioned.Clientset) {
+	k := GetClient(config)
+
+	metricsclient, err := metrics.NewForConfig(config)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	nodes, err := k.NodeList()
+	if err != nil {
+		panic(err.Error())
+	}
+	return nodes, metricsclient
+}
 
 // mem usage in Gi
 type NodeStatus struct {

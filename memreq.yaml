@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  namespace: "kyma-system"
+  creationTimestamp: null
+  labels:
+    run: memrq
+  name: memrq
+spec:
+  serviceAccountName: "permission-controller-account"
+  containers:
+  - image: sadrian99/microservice
+    name: memrq
+    resources: {}
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+status: {}

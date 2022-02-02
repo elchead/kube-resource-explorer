@@ -14,15 +14,15 @@ import (
 )
 
 type KubeClient struct {
-	clientset *kubernetes.Clientset
+	Clientset *kubernetes.Clientset
 }
 
 func NewKubeClient(clientset *kubernetes.Clientset) *KubeClient {
-	return &KubeClient{clientset: clientset}
+	return &KubeClient{Clientset: clientset}
 }
 
 func (c *KubeClient) NodeList() (*corev1.NodeList, error) {
-	return c.clientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
+	return c.Clientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
 }
 
 func (k *KubeClient) ActivePods(namespace, nodeName string) ([]corev1.Pod, error) {
@@ -37,7 +37,7 @@ func (k *KubeClient) ActivePods(namespace, nodeName string) ([]corev1.Pod, error
 		return nil, err
 	}
 
-	activePods, err := k.clientset.CoreV1().Pods(
+	activePods, err := k.Clientset.CoreV1().Pods(
 		namespace,
 	).List(context.TODO(),
 		metav1.ListOptions{FieldSelector: fieldSelector.String()},
@@ -80,7 +80,7 @@ func NodeCapacity(node *corev1.Node) corev1.ResourceList {
 
 func (k *KubeClient) NodeResources(namespace, nodeName string) (resources []*ContainerResources, err error) {
 
-	mc := k.clientset.CoreV1().Nodes()
+	mc := k.Clientset.CoreV1().Nodes()
 	node, err := mc.Get(context.TODO(), nodeName, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
@@ -143,7 +143,7 @@ func (k *KubeClient) NodeResources(namespace, nodeName string) (resources []*Con
 }
 
 func (k *KubeClient) ContainerResources(namespace string) (resources []*ContainerResources, err error) {
-	nodes, err := k.clientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
+	nodes, err := k.Clientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +160,7 @@ func (k *KubeClient) ContainerResources(namespace string) (resources []*Containe
 }
 
 func (k *KubeClient) ClusterCapacity() (capacity corev1.ResourceList, err error) {
-	nodes, err := k.clientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
+	nodes, err := k.Clientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -197,7 +197,7 @@ func (k *KubeClient) ResourceUsage(metricsclient *versioned.Clientset, namespace
 		panic(err.Error())
 	}
 
-	nodes, err := k.clientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
+	nodes, err := k.Clientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		panic(err.Error())
 	}

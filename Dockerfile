@@ -1,13 +1,14 @@
 FROM golang:1.17-alpine AS builder
 RUN apk add --no-cache git make
+RUN apk add build-base
 
 WORKDIR /code
 
 COPY . .
 RUN go mod download
-RUN make build
+RUN go build ./cmd/memreq
 
-FROM scratch
-COPY --from=builder /code/out/kube-resource-explorer /
+FROM golang:1.17-alpine
+COPY --from=builder /code/memreq /
 
-ENTRYPOINT ["/kube-resource-explorer"]
+CMD ["/memreq", "--isLocal=false"]
