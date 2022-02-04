@@ -19,7 +19,7 @@
 2. Deploy pod service `kaf pod-svc.yaml`
 3. Deploy worker job (modify node name for affinity!!): `kaf worker.yaml`
 4. Wait about 1min for worker job to deploy (but shuts down after a few minutes!!)
-5. [Check availability with : `wget http://worker-test.subdomain:5747/checkpointing`]
+5. [Check availability with : `wget http://test.subdomain:5747/checkpoint`]
 6. Deploy `kaf memreq.yaml`
 
 ## Development

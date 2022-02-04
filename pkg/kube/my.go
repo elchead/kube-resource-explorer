@@ -2,9 +2,11 @@ package kube
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
@@ -23,6 +25,15 @@ import (
 	resourcehelper "k8s.io/kubectl/pkg/util/resource"
 	"k8s.io/metrics/pkg/client/clientset/versioned"
 )
+
+func GetWorkerNode(nodes map[string]NodeStatus) (string, error) {
+	for k := range nodes {
+		if strings.Contains(k, "-opt-") {
+			return k, nil
+		}
+	}
+	return "", fmt.Errorf("No worker node found")
+}
 
 func GetConfig() *rest.Config {
 	kubeconfig := filepath.Join(os.Getenv("HOME"), ".kube", "config")
