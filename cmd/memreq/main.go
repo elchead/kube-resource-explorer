@@ -52,9 +52,8 @@ func main() {
 				fmt.Println("Memreq (Gi)", memReqs, "\nMemlim (Gi)", memLim, "\nMemAlloc (Gi)", memAlloc, "\nFrac(%)", fractionMemoryReq)
 
 				podName := pods.Items[0].Name
-				fmt.Printf("Checkpoint pod %s", podName)
-				TESTNAME := "test" // TODO HARDCODED !!
-				RequestCheckpointing(TESTNAME)
+				fmt.Printf("Checkpoint pod %s\n", podName)
+				RequestCheckpointing(podName)
 
 			}
 		case <-quit:
