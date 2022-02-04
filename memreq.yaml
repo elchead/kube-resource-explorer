@@ -1,17 +1,19 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  namespace: "kyma-system"
+  namespace: "playground"
   creationTimestamp: null
   labels:
     run: memrq
   name: memrq
 spec:
-  serviceAccountName: "permission-controller-account"
+  serviceAccountName: "default"
   containers:
   - image: sadrian99/microservice
     name: memrq
     resources: {}
+    command: ["/memreq"]
+    args: ["--namespace","playground","--isLocal=false"]
   dnsPolicy: ClusterFirst
   restartPolicy: Always
 status: {}

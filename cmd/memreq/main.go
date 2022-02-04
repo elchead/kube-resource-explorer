@@ -3,7 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
+	"net/http"
 	"os"
+	"time"
 
 	"github.com/elchead/kube-resource-explorer/pkg/kube"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
@@ -11,6 +13,8 @@ import (
 )
 
 var GitCommit string
+
+const node = "shoot--oaas-dev--playground-worker-opt-z2-6858f-bsh4v"
 
 func homeDir() string {
 	if h := os.Getenv("HOME"); h != "" {
@@ -22,7 +26,7 @@ func homeDir() string {
 func main() {
 
 	var (
-		namespace = flag.String("namespace", "play", "filter by namespace (defaults to all)")
+		namespace = flag.String("namespace", "playground", "filter by namespace (defaults to all)")
 		isLocal   = flag.Bool("isLocal", true, "otherwise use in cluster config")
 		config    *rest.Config
 	)
@@ -38,7 +42,6 @@ func main() {
 	// }
 
 	flag.Parse()
-	node := "shoot--oaas-live--play-worker-opt-z3-5b545-g7htk"
 	if *isLocal {
 		config = kube.GetConfig()
 
@@ -50,9 +53,56 @@ func main() {
 		}
 	}
 	k := kube.GetClient(config)
-	res, _ := kube.GetPodsByNode(*k.Clientset, node, *namespace)
+	ticker := time.NewTicker(3 * time.Second)
+	quit := make(chan struct{})
+	for {
+		select {
+		case <-ticker.C:
+			// do stuff
+			// nodes := kube.GetNodesByUsage(kube.GetNodesListAndMetrics(config))
+			// memAlloc := nodes[node].MemAlloc
+			printUsage(k, node, namespace, config)
+		case <-quit:
+			ticker.Stop()
+			return
+		}
+	}
+}
+
+func printUsage(k *kube.KubeClient, node string, namespace *string, config *rest.Config) {
+	res, err := kube.GetPodsByNode(*k.Clientset, node, *namespace)
+	if err != nil {
+		panic(err)
+	}
+	if len(res.Items) == 0 {
+		panic(fmt.Errorf("No pods found for %s, ns:%s", node, *namespace))
+	}
 	memReqs, memLim := kube.GetPodsTotalMemRequestsAndLimits(res.Items)
-	fmt.Println("Memreq", memReqs, "\nMemlim", memLim)
+	// if memR
 	nodes := kube.GetNodesByUsage(kube.GetNodesListAndMetrics(config))
+	memAlloc := nodes[node].MemAlloc
+	fractionMemoryReq := float64(memReqs) / float64(memAlloc) * 100
+	if fractionMemoryReq > 0.1 {
+		fmt.Println("Above 0.1%!")
+		pods, _ := kube.GetPodsByNode(*k.Clientset, node, *namespace)
+		podName := pods.Items[0].Name
+		fmt.Println("Pod", podName)
+		fmt.Println("Send checkpointing command")
+		TEST := "test"
+		resp := RequestCheckpointing(TEST)
+		fmt.Println("Status: ", resp.StatusCode)
+
+	}
+	fmt.Println("Memreq", memReqs, "\nMemlim", memLim, "\nMemAlloc", memAlloc, "\nFrac", fractionMemoryReq)
 	fmt.Println(nodes)
+}
+
+func RequestCheckpointing(podName string) *http.Response {
+	url := fmt.Sprintf("http://%s.subdomain:%d/checkpoint", podName, 5747)
+	// url := fmt.Sprintf("http://subdomain:%d/checkpoint", 5747)
+	resp, err := http.Get(url)
+	if err != nil {
+		panic(err)
+	}
+	return resp
 }

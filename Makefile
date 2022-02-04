@@ -52,6 +52,12 @@ DEFAULTIMAGE ?= dibi/kube-resource-explorer:$(VERSION)
 
 all: clean test cover build install
 
+docker:
+	docker build . -t sadrian99/microservice && docker push sadrian99/microservice
+my:
+	go build -o ./out/memreq ./cmd/memreq
+my-run:
+	go run ./cmd/memreq
 test:
 	$(shell mkdir TestResults)
 	$(GOTEST) -v -coverprofile=TestResults/coverage.out ./...

@@ -60,7 +60,7 @@ func GetNodesListAndMetrics(config *rest.Config) (*v1.NodeList, *versioned.Clien
 type NodeStatus struct {
 	name     string
 	memReq   int64
-	memLimit int64
+	MemAlloc int64
 }
 
 func GetPodsTotalMemRequestsAndLimits(podList []corev1.Pod) (int64, int64) {
@@ -114,8 +114,8 @@ func GetPodsByNode(d clientset.Clientset, name string, namespace string) (*v1.Po
 }
 
 // TODO check sort NOT WORKING FOR Memory
-func GetNodesByUsage(nodes *v1.NodeList, metricsclient *versioned.Clientset) []NodeStatus {
-	res := []NodeStatus{}
+func GetNodesByUsage(nodes *v1.NodeList, metricsclient *versioned.Clientset) map[string]NodeStatus {
+	res := map[string]NodeStatus{} //[]NodeStatus{}
 	for _, node := range nodes.Items {
 		mc, err := metricsclient.MetricsV1beta1().NodeMetricses().Get(context.TODO(), node.GetName(), metav1.GetOptions{})
 		if err != nil {
@@ -125,14 +125,19 @@ func GetNodesByUsage(nodes *v1.NodeList, metricsclient *versioned.Clientset) []N
 		// cpuReqs, cpuLimits, memoryReqs, memoryLimits, ephemeralstorageReqs, ephemeralstorageLimits :=
 		// reqs[corev1.ResourceCPU], limits[corev1.ResourceCPU], reqs[corev1.ResourceMemory], limits[corev1.ResourceMemory], reqs[corev1.ResourceEphemeralStorage], limits[corev1.ResourceEphemeralStorage]
 		usedMem := mc.Usage.Memory().ScaledValue(resource.Scale(9))
-		lim := node.Status.Allocatable.Memory().ScaledValue(resource.Scale(9))
+		allocatable := node.Status.Capacity
+		if len(node.Status.Allocatable) > 0 {
+			allocatable = node.Status.Allocatable
+		}
+		lim := allocatable.Memory().ScaledValue(resource.Scale(9))
 		node := NodeStatus{node.GetName(), usedMem, lim}
-		res = append(res, node)
+		res[node.name] = node
+		// res = append(res, node)
 	}
 	return res
 }
 
-func FilterNodesByUsage(nodes []NodeStatus, memThreshold int64) []NodeStatus {
+func FilterNodesByUsage(nodes map[string]NodeStatus, memThreshold int64) []NodeStatus {
 	res := []NodeStatus{}
 	for _, node := range nodes {
 		if node.memReq > memThreshold {

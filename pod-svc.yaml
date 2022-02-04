@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: playground
+  name: subdomain
+spec:
+  selector:
+    name: expose
+  clusterIP: None
+  ports:
+  - name: foo # Actually, no port is needed.
+    port: 80
+    targetPort: 80
+  - name: t # Actually, no port is needed.
+    port: 5747
+    targetPort: 5747
+  # - name: foo # Actually, no port is needed.
+  #   port: 80
+  #   targetPort: 80

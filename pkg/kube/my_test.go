@@ -7,21 +7,22 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const node = "shoot--oaas-dev--playground-worker-opt-z2-6858f-bsh4v"
+const namespace = "playground"
+
 func TestGetPodsByNode(t *testing.T) {
-	node := "shoot--oaas-live--play-worker-opt-z3-5b545-g7htk"
 	config := GetConfig()
 	k := GetClient(config)
-	res, _ := GetPodsByNode(*k.Clientset, node, "play")
+	res, _ := GetPodsByNode(*k.Clientset, node, namespace)
 	fmt.Println(res)
 	assert.Equal(t, true, false)
 
 }
 
 func TestGetNodeMemReq(t *testing.T) {
-	node := "shoot--oaas-live--play-worker-opt-z3-5b545-g7htk"
 	config := GetConfig()
 	k := GetClient(config)
-	res, _ := GetPodsByNode(*k.Clientset, node, "play")
+	res, _ := GetPodsByNode(*k.Clientset, node, namespace)
 	memReqs, memLim := GetPodsTotalMemRequestsAndLimits(res.Items)
 	assert.Equal(t, 0, memReqs)
 	assert.Equal(t, 0, memLim)
@@ -30,7 +31,7 @@ func TestGetNodeMemReq(t *testing.T) {
 func TestGetNodeWithXUsage(t *testing.T) {
 	// config := getConfig()
 	// res := GetNodesByUsage(getNodesListAndMetrics(config))
-	nodes := []NodeStatus{{"low", 1, 10}, {"high", 6, 10}}
+	nodes := map[string]NodeStatus{"low": {"low", 1, 10}, "high": {"high", 6, 10}}
 	res := FilterNodesByUsage(nodes, 5)
 	assert.Contains(t, res, NodeStatus{"high", 6, 10})
 	assert.NotContains(t, res, NodeStatus{"low", 1, 10})
@@ -38,13 +39,12 @@ func TestGetNodeWithXUsage(t *testing.T) {
 
 func TestFindIntensivePodOnCriticalNode(t *testing.T) {
 	config := GetConfig()
-	nodes := GetNodesByUsage(getNodesListAndMetrics(config))
+	nodes := GetNodesByUsage(GetNodesListAndMetrics(config))
 	fmt.Println(nodes)
-	res := FilterNodesByUsage(nodes, 5)
+	res := FilterNodesByUsage(nodes, 1)
 	criticalNode := res[0]
 
 	k := GetClient(config)
-	namespace := ""
 	resources, err := k.ContainerResources(namespace)
 	if err != nil {
 		panic(err.Error())
@@ -55,7 +55,7 @@ func TestFindIntensivePodOnCriticalNode(t *testing.T) {
 
 func TestNodesByMem(t *testing.T) {
 	config := GetConfig()
-	res := GetNodesByUsage(getNodesListAndMetrics(config))
+	res := GetNodesByUsage(GetNodesListAndMetrics(config))
 	fmt.Println(res)
 	assert.NotEqual(t, len(res), 0)
 }

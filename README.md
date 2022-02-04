@@ -1,3 +1,33 @@
+# My
+
+`memreq` observes the node usage and triggers checkpointing.
+
+## Cluster Deployment
+1. For API permissions, add service-account in worker namespace to `cluster-admin` Clusterrolebinding:
+
+    ```
+    k edit clusterrolebinding cluster-admin
+    // add
+    20 subjects:
+    21 - apiGroup: rbac.authorization.k8s.io
+    22   kind: Group
+    23   name: system:masters
+    24 - kind: ServiceAccount
+    25   name: default
+    26   namespace: playground
+    ```
+2. Deploy pod service `kaf pod-svc.yaml`
+3. Deploy worker job (modify node name for affinity!!): `kaf worker.yaml`
+4. Wait about 1min for worker job to deploy (but shuts down after a few minutes!!)
+5. [Check availability with : `wget http://worker-test.subdomain:5747/checkpointing`]
+6. Deploy `kaf memreq.yaml`
+
+## Development
+
+`make docker`: build docker image and push to repo
+`make my`: build `memreq`
+
+---
 # Resource Explorer
 
 Note: This fork doesn't use Google cloud resources and has removed this functionality.
