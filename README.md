@@ -27,6 +27,9 @@
 `make docker`: build docker image and push to repo
 `make my`: build `memreq`
 
+## Checkpointing
+Provide pod name:
+`WORKER=worker-l-x2bzh-z29tl ./checkpoint.sh`
 ---
 # Resource Explorer
 

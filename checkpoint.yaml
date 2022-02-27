@@ -1,0 +1,22 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  creationTimestamp: null
+  name: check.${WORKER}
+  namespace: playground
+spec:
+  template:
+    metadata:
+      # annotations:
+      #   sidecar.istio.io/inject: "false"
+      creationTimestamp: null
+    spec:
+      containers:
+      - command:
+         - "/bin/sh"
+        args: ["-c","while true; do wget ${IP};if [ $? -eq 0 ]; then wget http://localhost:15000/quitquitquit --post-data=''; break; fi; sleep 5;done"]
+        image: busybox
+        name: check
+        resources: {}
+      restartPolicy: Never
+status: {}
