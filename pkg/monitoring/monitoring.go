@@ -2,6 +2,7 @@ package monitoring
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
@@ -34,7 +35,7 @@ func (c *Client) GetPodMemory(podName, time string) (*api.QueryTableResult, erro
 	return c.Query(query)
 }
 
-func (c *Client) GetPodMemorySlope(podName, time, slopeWindow string) (*api.QueryTableResult, error) {
+func (c *Client) GetPodMemorySlope(podName, time, slopeWindow string) (float64, error) {
 	query := fmt.Sprintf(`import "experimental/aggregate" from(bucket: "%s") 
   |> range(start: %s)
   |> filter(fn: (r) => r["_measurement"] == "kubernetes_pod_container")
@@ -43,5 +44,14 @@ func (c *Client) GetPodMemorySlope(podName, time, slopeWindow string) (*api.Quer
   |> filter(fn: (r) => r["container_name"] == "worker")
   |> aggregate.rate(every: %s, unit: 1m, groupColumns: ["tag1", "tag2"])
   |> mean()`, c.bucket, time, podName, slopeWindow)
-	return c.Query(query)
+	res, err := c.Query(query)
+	if res.Next() && err == nil {
+		num := res.Record().Value()
+		if val, ok := num.(float64); ok {
+			return val, nil
+		} else {
+			return -1., errors.New("conversion error")
+		}
+	}
+	return -1., err
 }

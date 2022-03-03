@@ -29,13 +29,14 @@ func TestGetPodMemorySlope(t *testing.T) {
 	sut := monitoring.New(token, "influxdata", "default")
 	result, err := sut.GetPodMemorySlope("worker-m-jcbxp-hk75j", "-1h", "20m")
 	assert.NoError(t, err)
-	for result.Next() {
-		// Notice when group key has changed
-		if result.TableChanged() {
-			fmt.Printf("table: %s\n", result.TableMetadata().String())
-		}
-		// Access data
-		fmt.Printf("value: %v\n", result.Record().Value())
-	}
-	assert.Equal(t, "", result.Record().Value())
+	assert.Equal(t, 0., result)
+	// for result.Next() {
+	// 	// Notice when group key has changed
+	// 	if result.TableChanged() {
+	// 		fmt.Printf("table: %s\n", result.TableMetadata().String())
+	// 	}
+	// 	// Access data
+	// 	fmt.Printf("value: %v\n", result.Record().Value())
+	// }
+	// assert.Equal(t, "", result.Record().Value())
 }
