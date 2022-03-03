@@ -1,0 +1,65 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: job
+  namespace: playground
+spec:
+  template:
+    spec:
+      initContainers:
+            - command:
+                - sh
+                - -c
+                - cp -r -v /engines/* /var/tmp/engines
+              image: scoptimizer.common.repositories.cloud.sap/scoptimizer/development/engine/adrian
+              imagePullPolicy: Always
+              name: worker-engines
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+                privileged: false
+              volumeMounts:
+                - name: worker-engines
+                  mountPath: /var/tmp/engines
+      containers:
+      - name: ubuntu
+        image: busybox:latest
+        command: [ "/bin/sh", "-c", "--" ]
+        args: [ "while true; do sleep 30; done;" ]
+        volumeMounts:
+        - name: data
+          mountPath: /data
+      - name: test
+        image: scoptimizer.common.repositories.cloud.sap/scoptimizer/development/worker/adrian
+        command: ["/engines/snpopsvr",  "-application:itso","-file:/input/testFile.in","-mode:service","-runtime:86000"]
+        workingDir: "/tmp"
+        # command: [ "/bin/bash", "-c", "--" ]
+        args: [ "while true; do sleep 30; done;" ]
+        volumeMounts:
+        - name: input
+          mountPath: /input
+        - name: data
+          mountPath: /var/data
+        - name: worker-engines
+          mountPath: /engines
+        env:
+        - name: LD_LIBRARY_PATH
+          value: /engines
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsUser: 0
+      volumes:
+      - name: input
+        configMap:
+          name: input
+      - emptyDir: {}
+        name: worker-engines
+      - emptyDir: {}
+        name: data
+      restartPolicy: Never
+      imagePullSecrets:
+      - name: regcred
+  backoffLimit: 4
+
