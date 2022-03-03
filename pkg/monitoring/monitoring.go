@@ -33,3 +33,15 @@ func (c *Client) GetPodMemory(podName, time string) (*api.QueryTableResult, erro
   |> yield(name: "mean")`, c.bucket, time, podName)
 	return c.Query(query)
 }
+
+func (c *Client) GetPodMemorySlope(podName, time, slopeWindow string) (*api.QueryTableResult, error) {
+	query := fmt.Sprintf(`import "experimental/aggregate" from(bucket: "%s") 
+  |> range(start: %s)
+  |> filter(fn: (r) => r["_measurement"] == "kubernetes_pod_container")
+  |> filter(fn: (r) => r["_field"] == "memory_usage_bytes")
+  |> filter(fn: (r) => r["pod_name"] == "%s")
+  |> filter(fn: (r) => r["container_name"] == "worker")
+  |> aggregate.rate(every: %s, unit: 1m, groupColumns: ["tag1", "tag2"])
+  |> mean()`, c.bucket, time, podName, slopeWindow)
+	return c.Query(query)
+}
