@@ -11,7 +11,7 @@ spec:
                 - sh
                 - -c
                 - cp -r -v /engines/* /var/tmp/engines
-              image: scoptimizer.common.repositories.cloud.sap/scoptimizer/development/engine/adrian
+              image: scoptimizer.common.repositories.cloud.sap/performance/engines:latest
               imagePullPolicy: Always
               name: worker-engines
               securityContext:
@@ -32,7 +32,7 @@ spec:
         - name: data
           mountPath: /data
       - name: test
-        image: scoptimizer.common.repositories.cloud.sap/scoptimizer/development/worker/adrian
+        image: scoptimizer.common.repositories.cloud.sap/development/worker/adrian
         command: ["/engines/snpopsvr",  "-application:itso","-file:/input/testFile.in","-mode:service","-runtime:86000"]
         workingDir: "/tmp"
         # command: [ "/bin/bash", "-c", "--" ]
