@@ -28,6 +28,28 @@ func (c *Client) Query(query string) (*api.QueryTableResult, error) {
 	return c.queryAPI.Query(context.Background(), query)
 }
 
+type PodMemMap map[string]int64
+
+func (c *Client) GetPodMemories(nodeName string) (PodMemMap, error) {
+	time := "-1m"
+	query := fmt.Sprintf(`from(bucket: "%s") 
+	|> range(start: %s)
+	|> filter(fn: (r) => r["_measurement"] == "kubernetes_pod_container")
+	|> filter(fn: (r) => r["_field"] == "memory_usage_bytes")
+	|> filter(fn: (r) => r["container_name"] == "worker")
+	|> filter(fn: (r) => r["host"] == "%s")
+	|> last()`, c.bucket, time, nodeName)
+	res, err := c.Query(query) // default container: worker
+	mp := make(PodMemMap)
+	for err == nil && res.Next() {
+		table := res.Record()
+		pod := table.ValueByKey("pod_name").(string)
+		mem := table.Value().(int64)
+		mp[pod] = mem
+	}
+	return mp, err
+}
+
 func (c *Client) GetPodMemory(podName, containerName, time string) (*api.QueryTableResult, error) {
 	query := fmt.Sprintf(`from(bucket: "%s") 
 	|> range(start: %s)

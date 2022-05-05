@@ -23,10 +23,16 @@ func TestGetPodMemory(t *testing.T) {
 		// Access data
 		// fmt.Printf("value: %v\n", result.Record().Value())
 	}
-	fmt.Printf("finish")
 
 	assert.True(t, false)
-	// assert.Equal(t, "", result.Record().Value())
+}
+func TestPodMemoryOfNode(t *testing.T) {
+	sut := monitoring.NewLocal(token, "influxdata", "default")
+	res, err := sut.GetPodMemories("shoot--oaas-dev--playground-worker-opt-z2-6bf98-9dv44")
+	fmt.Println(res)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, len(res))
+	assert.NotEqual(t, -1., res["o10n-worker-s-ll8rn-75t9n"])
 }
 
 func TestFreeMemoryNode(t *testing.T) {
