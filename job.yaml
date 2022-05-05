@@ -23,6 +23,15 @@ spec:
               volumeMounts:
                 - name: worker-engines
                   mountPath: /var/tmp/engines
+            - name: init-script-downloader
+              image: appropriate/curl
+              args:
+                  - "-o"
+                  - "/tmp/data/tes.sql" # we are saving downloaded file as init.sql in /tmp/data directory
+                  - "https://raw.githubusercontent.com/kubedb/mysql-init-scripts/master/init.sql" # download url
+              volumeMounts:
+                - name: input # mount the volume where downloaded file will be saved
+                  mountPath: /tmp/data
       containers:
       - name: ubuntu
         image: busybox:latest
@@ -52,8 +61,9 @@ spec:
           runAsUser: 0
       volumes:
       - name: input
-        configMap:
-          name: input
+        emptyDir: {}
+        # configMap:
+        #   name: input
       - emptyDir: {}
         name: worker-engines
       - emptyDir: {}
