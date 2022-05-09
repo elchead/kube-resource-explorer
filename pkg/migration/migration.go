@@ -2,6 +2,7 @@ package migration
 
 import (
 	"fmt"
+	"log"
 	"os/exec"
 )
 
@@ -13,28 +14,23 @@ type Migration struct {
 	ScriptDir string
 }
 
+type MigrationCmd struct {
+	Pod string
+}
+
+func Migrate(migs []MigrationCmd) {
+	const namespace = "playground"
+	for _, m := range migs {
+		err := New(m.Pod, namespace).Migrate()
+		if err != nil {
+			log.Printf("Migration failed: %v", err)
+		}
+	}
+}
+
 func New(pod, namespace string) *Migration {
 	return &Migration{Pod: pod, Namespace: namespace, ScriptDir: "/home/adrian/job-scheduler"}
 }
-
-// func (m Migration) GetManifest() runtime.Object {
-// 	// read yaml
-// 	b, err := ioutil.ReadFile("pod_checkpoint.yaml")
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	decode := scheme.Codecs.UniversalDeserializer().Decode
-// 	obj, groupVersionKind, err := decode(b, nil, nil)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	fmt.Println(groupVersionKind)
-// 	fmt.Println(obj)
-// 	return obj.(*v1.Pod) // do clonePod jkub?
-// 	// decode
-// 	// update values
-// 	//
-// }
 
 func (m Migration) Migrate() error {
 	cmd := exec.Command("/bin/sh", "./tpod_checkpoint.sh")

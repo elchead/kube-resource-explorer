@@ -1,5 +1,9 @@
 package monitoring
 
+import (
+	"github.com/elchead/kube-resource-explorer/pkg/migration"
+)
+
 type Controller struct {
 	Client Clienter
 	Policy MigrationPolicy
@@ -9,16 +13,11 @@ func NewController(client Clienter) *Controller {
 	return &Controller{client, ThresholdPolicy{}}
 }
 
-type MigrationCmd struct {
-	Pod string
-}
-
 type ThresholdPolicy struct{}
 
 func (t ThresholdPolicy) GetCriticalNodes(c Clienter) (criticalNodes []string) {
 	nodes, _ := c.GetFreeMemoryOfNodes()
-	for node := range nodes {
-		free := nodes[node]
+	for node, free := range nodes {
 		if free < 20. {
 			criticalNodes = append(criticalNodes, node)
 		}
@@ -35,7 +34,7 @@ func (c Controller) GetCriticalNodes() []string {
 	return c.Policy.GetCriticalNodes(c.Client)
 }
 
-func (c Controller) GetMigrations() (migrations []MigrationCmd, err error) {
+func (c Controller) GetMigrations() (migrations []migration.MigrationCmd, err error) {
 	nodes := c.Policy.GetCriticalNodes(c.Client)
 	for _, node := range nodes {
 		podMems, err := c.Client.GetPodMemories(node)
@@ -43,7 +42,7 @@ func (c Controller) GetMigrations() (migrations []MigrationCmd, err error) {
 			return migrations, err
 		}
 		pod := GetMaxPod(podMems)
-		migrations = append(migrations, MigrationCmd{pod})
+		migrations = append(migrations, migration.MigrationCmd{Pod: pod})
 	}
 	return migrations, nil
 }

@@ -6,4 +6,4 @@ TestResults
 .projectile/
 .vscode/
 servicetool
-pkg/monitoring/.env
+integration/.env

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/elchead/kube-resource-explorer/pkg/migration"
 	"github.com/elchead/kube-resource-explorer/pkg/monitoring"
@@ -49,16 +50,15 @@ func main() {
 
 	url := "https://westeurope-1.azure.cloud2.influxdata.com"
 	org := "stobbe.adrian@gmail.com"
-	sut := monitoring.New(url, token, org, "default")
+	client := monitoring.New(url, token, org, "default")
 	node := "zone2"
 	namespace := "playground"
-	// pod := "counterten"
-	usage, err := sut.GetFreeMemoryNode(node)
+	usage, err := client.GetFreeMemoryNode(node)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("Free memory of", node, usage, "percent")
-	podMems, err := sut.GetPodMemories(node)
+	podMems, err := client.GetPodMemories(node)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -71,59 +71,18 @@ func main() {
 			log.Fatal(err)
 		}
 	}
+	ctrl := monitoring.NewController(client)
 
-	// result, err := sut.GetPodMemory("counterten", "counterten", "-1ms")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// for result.Next() {
-	// 	// Notice when group key has changed
-	// 	if result.TableChanged() {
-	// 		fmt.Printf("table: %s\n", result.TableMetadata().String())
-	// 	}
-	// 	// Access data
-	// 	fmt.Printf("value: %v\n", result.Record().Value())
-	// }
-	// ticker := time.NewTicker(3 * time.Second)
-	// quit := make(chan struct{})
-	// for {
-	// 	select {
-	// 	case <-ticker.C:
-	// 		nodes := kube.GetNodesByUsage(kube.GetNodesListAndMetrics(config))
-	// 		node, err := kube.GetWorkerNode(nodes)
-	// 		if err != nil {
-	// 			panic(err)
-	// 		}
-	// 		memAlloc := nodes[node].MemAlloc
-
-	// 		pods, _ := kube.GetPodsByNode(*k.Clientset, node, *namespace)
-	// 		memReqs, memLim := kube.GetPodsTotalMemRequestsAndLimits(pods.Items)
-	// 		fractionMemoryReq := float64(memReqs) / float64(memAlloc) * 100
-
-	// 		memReqThresholdPercent := 0.1
-	// 		if fractionMemoryReq > memReqThresholdPercent {
-	// 			fmt.Printf("Memory request above %f %%!\n", memReqThresholdPercent)
-	// 			fmt.Println("Memreq (Gi)", memReqs, "\nMemlim (Gi)", memLim, "\nMemAlloc (Gi)", memAlloc, "\nFrac(%)", fractionMemoryReq)
-
-	// 			podName := pods.Items[0].Name
-	// 			fmt.Printf("Checkpoint pod %s\n", podName)
-	// 			RequestCheckpointing(podName)
-
-	// 		}
-	// 	case <-quit:
-	// 		ticker.Stop()
-	// 		return
-	// 	}
-	// }
+	ticker := time.NewTicker(60 * time.Second)
+	quit := make(chan struct{})
+	for {
+		select {
+		case <-ticker.C:
+			migs, _ := ctrl.GetMigrations()
+			migration.Migrate(migs)
+		case <-quit:
+			ticker.Stop()
+			return
+		}
+	}
 }
-
-// func RequestCheckpointing(podName string) *http.Response {
-// 	url := fmt.Sprintf("http://%s.subdomain:%d/checkpoint", podName, 5747)
-// 	// url := fmt.Sprintf("http://subdomain:%d/checkpoint", 5747)
-// 	resp, err := http.Get(url)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	fmt.Println("Request Status: ", resp.StatusCode)
-// 	return resp
-// }
