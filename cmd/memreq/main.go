@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/elchead/kube-resource-explorer/pkg/migration"
 	"github.com/elchead/kube-resource-explorer/pkg/monitoring"
 	"github.com/joho/godotenv"
 	// "github.com/elchead/kube-resource-explorer/pkg/kube"
@@ -50,11 +51,26 @@ func main() {
 	org := "stobbe.adrian@gmail.com"
 	sut := monitoring.New(url, token, org, "default")
 	node := "zone2"
-	res, err := sut.GetFreeMemoryNode(node)
+	namespace := "playground"
+	// pod := "counterten"
+	usage, err := sut.GetFreeMemoryNode(node)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Usage", res)
+	fmt.Println("Free memory of", node, usage, "percent")
+	podMems, err := sut.GetPodMemories(node)
+	if err != nil {
+		log.Fatal(err)
+	}
+	for pod := range podMems {
+		fmt.Println("Pod", pod, "uses", podMems[pod], "GB")
+		fmt.Println("Migrating", pod)
+		sut := migration.New(pod, namespace)
+		err := sut.Migrate()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 
 	// result, err := sut.GetPodMemory("counterten", "counterten", "-1ms")
 	// if err != nil {

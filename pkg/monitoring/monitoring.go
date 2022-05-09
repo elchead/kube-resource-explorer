@@ -12,6 +12,14 @@ import (
 
 const memoryMetric = "memory_working_set_bytes" // "memory_usage_bytes"
 
+type Clienter interface {
+	GetPodMemories(nodeName string) (PodMemMap, error)
+	GetFreeMemoryNode(nodeName string) (float64, error)
+	// GetFreeMemoryOfNodes() (NodeMemMap, error)
+	// GetPodMemorySlope(podName, time, slopeWindow string) (float64, error)
+
+}
+
 type Client struct {
 	client   influxdb2.Client
 	queryAPI api.QueryAPI

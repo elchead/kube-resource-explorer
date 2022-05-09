@@ -8,9 +8,9 @@ import (
 )
 
 func TestMigration(t *testing.T) {
-	pod := "o10n-worker-s-q697b-lvfw7"
-	node := "zone2"
-	sut := migration.New(pod, node)
-	manifest := sut.GetManifest() // yaml... send to kubectl apply
-	assert.Equal(t, "", manifest)
+	pod := "o10n-worker-s-dqknc-9xbl2"
+	namespace := "playground"
+	sut := migration.New(pod, namespace)
+	err := sut.Migrate()
+	assert.Error(t, err)
 }
