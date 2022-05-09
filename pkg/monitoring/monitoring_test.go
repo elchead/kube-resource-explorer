@@ -2,67 +2,62 @@ package monitoring_test
 
 import (
 	"fmt"
+	"log"
+	"os"
 	"testing"
 
 	"github.com/elchead/kube-resource-explorer/pkg/monitoring"
+	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
 )
 
-const token = "L2gdmNenL3F9KTGskpNtnPY4wfhVfknn"
+var token string
+var sut *monitoring.Client
 
-func TestGetPodMemory(t *testing.T) {
-	sut := monitoring.NewLocal(token, "influxdata", "default")
-	result, err := sut.GetPodMemory("acounterten", "counterten", "-1m")
-	assert.NoError(t, err)
-	for result.Next() {
-		// Notice when group key has changed
-		// if result.TableChanged() {
-		// 	fmt.Printf("table: %s\n", result.TableMetadata().String())
-		// }
-		fmt.Println(result.Record())
-		// Access data
-		// fmt.Printf("value: %v\n", result.Record().Value())
+const url = "https://westeurope-1.azure.cloud2.influxdata.com"
+const org = "stobbe.adrian@gmail.com"
+const node = "zone2"
+const pod = "counterten"
+
+func init() {
+
+	err := godotenv.Load(".env")
+
+	if err != nil {
+		log.Fatal("Error loading .env file")
 	}
+	token = os.Getenv("INFLUXDB_TOKEN")
+	sut = monitoring.New(url, token, org, "default")
+}
 
-	assert.True(t, false)
+func TestGbConversion(t *testing.T) {
+	assert.Equal(t, 192.7, monitoring.ConvertToGb(206912778240))
 }
 func TestPodMemoryOfNode(t *testing.T) {
-	sut := monitoring.NewLocal(token, "influxdata", "default")
-	res, err := sut.GetPodMemories("shoot--oaas-dev--playground-worker-opt-z2-6bf98-9dv44")
+	res, err := sut.GetPodMemoriesFromContainer(node, pod)
 	fmt.Println(res)
 	assert.NoError(t, err)
-	assert.Equal(t, 2, len(res))
-	assert.NotEqual(t, -1., res["o10n-worker-s-ll8rn-75t9n"])
+	assert.Equal(t, 1, len(res))
+	assert.NotEqual(t, -1., res[pod])
+	assert.NotEqual(t, 0., res[pod])
 }
 
 func TestFreeMemoryNode(t *testing.T) {
-	sut := monitoring.NewLocal(token, "influxdata", "default")
-	res, err := sut.GetFreeMemoryNode("shoot--oaas-dev--playground-worker-opt-z2-6bf98-9dv44")
+	res, err := sut.GetFreeMemoryNode(node)
 	assert.NoError(t, err)
-	assert.Equal(t, -1., res)
+	assert.NotEqual(t, -1., res)
 }
 
 func TestFreeMemoryOfNodes(t *testing.T) {
-	sut := monitoring.NewLocal(token, "influxdata", "default")
 	res, err := sut.GetFreeMemoryOfNodes()
 	fmt.Println(res)
 	assert.NoError(t, err)
-	assert.Equal(t, 3, len(res))
-	assert.Equal(t, -1., res["shoot--oaas-dev--playground-worker-opt-z2-6bf98-9dv44"])
+	assert.Equal(t, 1, len(res))
+	assert.NotEqual(t, -1., res[node])
 }
 
 func TestGetPodMemorySlope(t *testing.T) {
-	sut := monitoring.NewLocal(token, "influxdata", "default")
-	result, err := sut.GetPodMemorySlope("o10n-worker-s-qxw8k-pbclk", "-3m", "1m")
+	result, err := sut.GetPodMemorySlopeFromContainer(pod, "counterten", "-3m", "1m")
 	assert.NoError(t, err)
 	assert.Equal(t, 0., result)
-	// for result.Next() {
-	// 	// Notice when group key has changed
-	// 	if result.TableChanged() {
-	// 		fmt.Printf("table: %s\n", result.TableMetadata().String())
-	// 	}
-	// 	// Access data
-	// 	fmt.Printf("value: %v\n", result.Record().Value())
-	// }
-	// assert.Equal(t, "", result.Record().Value())
 }

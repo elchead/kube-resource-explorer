@@ -4,10 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/api"
 )
+
+const memoryMetric = "memory_working_set_bytes" // "memory_usage_bytes"
 
 type Client struct {
 	client   influxdb2.Client
@@ -28,48 +31,45 @@ func (c *Client) Query(query string) (*api.QueryTableResult, error) {
 	return c.queryAPI.Query(context.Background(), query)
 }
 
-type PodMemMap map[string]int64
+type PodMemMap map[string]float64
 
-func (c *Client) GetPodMemories(nodeName string) (PodMemMap, error) {
+func (c *Client) GetPodMemoriesFromContainer(nodeName, containerName string) (PodMemMap, error) {
 	time := "-1m"
 	query := fmt.Sprintf(`from(bucket: "%s") 
 	|> range(start: %s)
 	|> filter(fn: (r) => r["_measurement"] == "kubernetes_pod_container")
-	|> filter(fn: (r) => r["_field"] == "memory_usage_bytes")
-	|> filter(fn: (r) => r["container_name"] == "worker")
+	|> filter(fn: (r) => r["_field"] == "%s")
+	|> filter(fn: (r) => r["container_name"] == "%s")
 	|> filter(fn: (r) => r["host"] == "%s")
-	|> last()`, c.bucket, time, nodeName)
+	|> last()`, c.bucket, time, memoryMetric, containerName, nodeName)
 	res, err := c.Query(query) // default container: worker
 	mp := make(PodMemMap)
 	for err == nil && res.Next() {
 		table := res.Record()
 		pod := table.ValueByKey("pod_name").(string)
 		mem := table.Value().(int64)
-		mp[pod] = mem
+		mp[pod] = ConvertToGb(mem)
 	}
 	return mp, err
 }
 
-func (c *Client) GetPodMemory(podName, containerName, time string) (*api.QueryTableResult, error) {
-	query := fmt.Sprintf(`from(bucket: "%s") 
-	|> range(start: %s)
-	|> filter(fn: (r) => r["_measurement"] == "kubernetes_pod_container")
-	|> filter(fn: (r) => r["_field"] == "memory_usage_bytes")
-	|> filter(fn: (r) => r["pod_name"] == "%s")
-	|> filter(fn: (r) => r["container_name"] == "%s" )
-  |> yield(name: "mean")`, c.bucket, time, podName, containerName)
-	return c.Query(query) // default container: worker
+func (c *Client) GetPodMemories(nodeName string) (PodMemMap, error) {
+	return c.GetPodMemoriesFromContainer(nodeName, "worker")
 }
 
 func (c *Client) GetPodMemorySlope(podName, time, slopeWindow string) (float64, error) {
+	return c.GetPodMemorySlopeFromContainer(podName, "worker", time, slopeWindow)
+}
+
+func (c *Client) GetPodMemorySlopeFromContainer(podName, containerName, time, slopeWindow string) (float64, error) {
 	query := fmt.Sprintf(`import "experimental/aggregate" from(bucket: "%s") 
   |> range(start: %s)
   |> filter(fn: (r) => r["_measurement"] == "kubernetes_pod_container")
-  |> filter(fn: (r) => r["_field"] == "memory_usage_bytes")
+  |> filter(fn: (r) => r["_field"] == "%s")
   |> filter(fn: (r) => r["pod_name"] == "%s")
-  |> filter(fn: (r) => r["container_name"] == "worker")
+  |> filter(fn: (r) => r["container_name"] == "%s")
   |> aggregate.rate(every: %s, unit: 1m, groupColumns: ["tag1", "tag2"])
-  |> mean()`, c.bucket, time, podName, slopeWindow)
+  |> mean()`, c.bucket, time, memoryMetric, podName, containerName, slopeWindow)
 	res, err := c.Query(query)
 	if res.Next() && err == nil {
 		num := res.Record().Value()
@@ -93,8 +93,6 @@ func (c *Client) GetFreeMemoryNode(nodeName string) (float64, error) {
 	res, err := c.Query(query)
 	if err == nil && res.Next() {
 		num := res.Record().Value()
-		// fmt.Println(num)
-		// fmt.Println(res.Record())
 		if val, ok := num.(float64); ok {
 			return val, nil
 		}
@@ -121,4 +119,23 @@ func (c *Client) GetFreeMemoryOfNodes() (NodeMemMap, error) {
 		mp[node] = available_percent
 	}
 	return mp, err
+}
+
+func ConvertToGb(bytesSize int64) float64 {
+	res := float64(bytesSize) / (1 << 30)
+	return round(res, .5, 2)
+}
+
+func round(val float64, roundOn float64, places int) (newVal float64) {
+	var round float64
+	pow := math.Pow(10, float64(places))
+	digit := pow * val
+	_, div := math.Modf(digit)
+	if div >= roundOn {
+		round = math.Ceil(digit)
+	} else {
+		round = math.Floor(digit)
+	}
+	newVal = round / pow
+	return
 }
