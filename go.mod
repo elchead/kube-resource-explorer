@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	github.com/influxdata/influxdb-client-go/v2 v2.8.0
+	github.com/joho/godotenv v1.4.0
 	github.com/ryanuber/columnize v2.1.1-0.20170703205827-abc90934186a+incompatible
 	github.com/stretchr/testify v1.7.1
 	golang.org/x/text v0.3.7
@@ -35,7 +36,6 @@ require (
 	github.com/googleapis/gnostic v0.5.5 // indirect
 	github.com/imdario/mergo v0.3.5 // indirect
 	github.com/influxdata/line-protocol v0.0.0-20200327222509-2487e7298839 // indirect
-	github.com/joho/godotenv v1.4.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/mailru/easyjson v0.7.6 // indirect

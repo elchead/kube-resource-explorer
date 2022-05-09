@@ -1,26 +1,31 @@
 package main
 
 import (
-	"strings"
+	"os"
 	"testing"
 
-	"github.com/elchead/kube-resource-explorer/pkg/kube"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetNodeName(t *testing.T) {
-	config := kube.GetConfig()
-	nodes := kube.GetNodesByUsage(kube.GetNodesListAndMetrics(config))
-	name, err := kube.GetWorkerNode(nodes)
-	assert.NoError(t, err)
-	assert.True(t, strings.Contains(name, "opt"))
+func TestGetToken(t *testing.T) {
+	// err := godotenv.Load("./../../pkg/monitoring/.env")
+	// assert.NoError(t, err)
+	assert.NotEqual(t, "", os.Getenv("INFLUXDB_TOKEN"))
 }
 
-func TestGetPodsOfNode(t *testing.T) {
-	config := kube.GetConfig()
-	k := kube.GetClient(config)
-	namespace := "playground"
-	node := "shoot--oaas-dev--playground-worker-opt-z2-6858f-bsh4v"
-	pods, _ := kube.GetPodsByNode(*k.Clientset, node, namespace)
-	assert.NotEmpty(t, pods.Items)
-}
+// func TestGetNodeName(t *testing.T) {
+// 	config := kube.GetConfig()
+// 	nodes := kube.GetNodesByUsage(kube.GetNodesListAndMetrics(config))
+// 	name, err := kube.GetWorkerNode(nodes)
+// 	assert.NoError(t, err)
+// 	assert.True(t, strings.Contains(name, "opt"))
+// }
+
+// func TestGetPodsOfNode(t *testing.T) {
+// 	config := kube.GetConfig()
+// 	k := kube.GetClient(config)
+// 	namespace := "playground"
+// 	node := "shoot--oaas-dev--playground-worker-opt-z2-6858f-bsh4v"
+// 	pods, _ := kube.GetPodsByNode(*k.Clientset, node, namespace)
+// 	assert.NotEmpty(t, pods.Items)
+// }
