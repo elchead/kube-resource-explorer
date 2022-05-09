@@ -21,18 +21,19 @@ type Clienter interface {
 }
 
 type Client struct {
-	client   influxdb2.Client
-	queryAPI api.QueryAPI
-	bucket   string
-}
-
-func NewLocal(token, org, bucket string) *Client {
-	return New("http://localhost:8081", token, org, bucket)
+	client    influxdb2.Client
+	queryAPI  api.QueryAPI
+	bucket    string
+	TimeFrame string // time interval of data to query: e.g. "-5m"
 }
 
 func New(serviceUrl, token, org, bucket string) *Client {
+	return NewWithTime(serviceUrl, token, org, bucket, "-20m")
+}
+
+func NewWithTime(serviceUrl, token, org, bucket, time string) *Client {
 	client := influxdb2.NewClientWithOptions(serviceUrl, token, influxdb2.DefaultOptions())
-	return &Client{client, client.QueryAPI(org), bucket}
+	return &Client{client, client.QueryAPI(org), bucket, time}
 }
 
 func (c *Client) Query(query string) (*api.QueryTableResult, error) {
@@ -42,14 +43,13 @@ func (c *Client) Query(query string) (*api.QueryTableResult, error) {
 type PodMemMap map[string]float64
 
 func (c *Client) GetPodMemoriesFromContainer(nodeName, containerName string) (PodMemMap, error) {
-	time := "-1m"
 	query := fmt.Sprintf(`from(bucket: "%s") 
 	|> range(start: %s)
 	|> filter(fn: (r) => r["_measurement"] == "kubernetes_pod_container")
 	|> filter(fn: (r) => r["_field"] == "%s")
 	|> filter(fn: (r) => r["container_name"] == "%s")
 	|> filter(fn: (r) => r["host"] == "%s")
-	|> last()`, c.bucket, time, memoryMetric, containerName, nodeName)
+	|> last()`, c.bucket, c.TimeFrame, memoryMetric, containerName, nodeName)
 	res, err := c.Query(query) // default container: worker
 	mp := make(PodMemMap)
 	for err == nil && res.Next() {
@@ -91,13 +91,12 @@ func (c *Client) GetPodMemorySlopeFromContainer(podName, containerName, time, sl
 }
 
 func (c *Client) GetFreeMemoryNode(nodeName string) (float64, error) {
-	time := "-1m"
 	query := fmt.Sprintf(`from(bucket: "%s")
 	|> range(start: %s)
 	|> filter(fn: (r) => r["_measurement"] == "mem")
 	|> filter(fn: (r) => r["_field"] == "available_percent")
 	|> filter(fn: (r) => r["host"] == "%s")
-	|> last()`, c.bucket, time, nodeName)
+	|> last()`, c.bucket, c.TimeFrame, nodeName)
 	res, err := c.Query(query)
 	if err == nil && res.Next() {
 		num := res.Record().Value()
@@ -111,12 +110,11 @@ func (c *Client) GetFreeMemoryNode(nodeName string) (float64, error) {
 type NodeMemMap map[string]float64
 
 func (c *Client) GetFreeMemoryOfNodes() (NodeMemMap, error) {
-	time := "-1m"
 	query := fmt.Sprintf(`from(bucket: "%s")
 	|> range(start: %s)
 	|> filter(fn: (r) => r["_measurement"] == "mem")
 	|> filter(fn: (r) => r["_field"] == "available_percent")
-	|> last()`, c.bucket, time)
+	|> last()`, c.bucket, c.TimeFrame)
 	res, err := c.Query(query)
 
 	mp := make(NodeMemMap)
@@ -125,6 +123,7 @@ func (c *Client) GetFreeMemoryOfNodes() (NodeMemMap, error) {
 		node := table.ValueByKey("host").(string)
 		available_percent := table.Value().(float64)
 		mp[node] = available_percent
+		fmt.Println("Free memory of", node, available_percent, "%")
 	}
 	return mp, err
 }

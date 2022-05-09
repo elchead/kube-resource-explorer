@@ -2,7 +2,7 @@ package main
 
 import (
 	// "net/http"
-	"fmt"
+
 	"log"
 	"os"
 	"time"
@@ -50,36 +50,17 @@ func main() {
 
 	url := "https://westeurope-1.azure.cloud2.influxdata.com"
 	org := "stobbe.adrian@gmail.com"
-	client := monitoring.New(url, token, org, "default")
-	node := "zone2"
+	client := monitoring.NewWithTime(url, token, org, "default", "-5h")
 	namespace := "playground"
-	usage, err := client.GetFreeMemoryNode(node)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("Free memory of", node, usage, "percent")
-	podMems, err := client.GetPodMemories(node)
-	if err != nil {
-		log.Fatal(err)
-	}
-	for pod := range podMems {
-		fmt.Println("Pod", pod, "uses", podMems[pod], "GB")
-		fmt.Println("Migrating", pod)
-		sut := migration.New(pod, namespace)
-		err := sut.Migrate()
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
 	ctrl := monitoring.NewController(client)
 
-	ticker := time.NewTicker(60 * time.Second)
+	ticker := time.NewTicker(3 * time.Second)
 	quit := make(chan struct{})
 	for {
 		select {
 		case <-ticker.C:
 			migs, _ := ctrl.GetMigrations()
-			migration.Migrate(migs)
+			migration.Migrate(migs, namespace)
 		case <-quit:
 			ticker.Stop()
 			return

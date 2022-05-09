@@ -42,7 +42,7 @@ func (c Controller) GetMigrations() (migrations []migration.MigrationCmd, err er
 			return migrations, err
 		}
 		pod := GetMaxPod(podMems)
-		migrations = append(migrations, migration.MigrationCmd{Pod: pod})
+		migrations = append(migrations, migration.MigrationCmd{Pod: pod, Usage: podMems[pod]})
 	}
 	return migrations, nil
 }

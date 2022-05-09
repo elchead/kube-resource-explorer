@@ -15,12 +15,13 @@ type Migration struct {
 }
 
 type MigrationCmd struct {
-	Pod string
+	Pod   string
+	Usage float64
 }
 
-func Migrate(migs []MigrationCmd) {
-	const namespace = "playground"
+func Migrate(migs []MigrationCmd, namespace string) {
 	for _, m := range migs {
+		fmt.Println("Migrating", m.Pod, "wich uses", m.Usage, "GB")
 		err := New(m.Pod, namespace).Migrate()
 		if err != nil {
 			log.Printf("Migration failed: %v", err)
