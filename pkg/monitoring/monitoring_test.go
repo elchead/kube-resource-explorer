@@ -53,7 +53,7 @@ func TestFreeMemoryOfNodes(t *testing.T) {
 
 func TestGetPodMemorySlope(t *testing.T) {
 	sut := monitoring.NewLocal(token, "influxdata", "default")
-	result, err := sut.GetPodMemorySlope("worker-m-jcbxp-hk75j", "-1h", "20m")
+	result, err := sut.GetPodMemorySlope("o10n-worker-s-qxw8k-pbclk", "-3m", "1m")
 	assert.NoError(t, err)
 	assert.Equal(t, 0., result)
 	// for result.Next() {

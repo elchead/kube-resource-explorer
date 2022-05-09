@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/influxdata/influxdb-client-go/v2 v2.8.0
 	github.com/ryanuber/columnize v2.1.1-0.20170703205827-abc90934186a+incompatible
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.7.1
 	golang.org/x/text v0.3.7
 	k8s.io/api v0.23.3
 	k8s.io/apimachinery v0.23.3
