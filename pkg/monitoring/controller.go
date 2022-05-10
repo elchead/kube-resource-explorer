@@ -10,15 +10,17 @@ type Controller struct {
 }
 
 func NewController(client Clienter) *Controller {
-	return &Controller{client, ThresholdPolicy{}}
+	return &Controller{client, ThresholdPolicy{20.}}
 }
 
-type ThresholdPolicy struct{}
+type ThresholdPolicy struct {
+	ThresholdFreePercent float64
+}
 
 func (t ThresholdPolicy) GetCriticalNodes(c Clienter) (criticalNodes []string) {
 	nodes, _ := c.GetFreeMemoryOfNodes()
 	for node, free := range nodes {
-		if free < 20. {
+		if free < t.ThresholdFreePercent {
 			criticalNodes = append(criticalNodes, node)
 		}
 	}
@@ -27,11 +29,6 @@ func (t ThresholdPolicy) GetCriticalNodes(c Clienter) (criticalNodes []string) {
 
 type MigrationPolicy interface {
 	GetCriticalNodes(Clienter) []string
-}
-
-// TODO remove
-func (c Controller) GetCriticalNodes() []string {
-	return c.Policy.GetCriticalNodes(c.Client)
 }
 
 func (c Controller) GetMigrations() (migrations []migration.MigrationCmd, err error) {

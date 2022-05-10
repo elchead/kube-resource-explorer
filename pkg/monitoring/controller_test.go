@@ -37,16 +37,16 @@ func (c *mockPolicy) GetCriticalNodes(clt Clienter) []string {
 
 func TestGetCriticalNodes(t *testing.T) {
 	mockClient := &mockClient{}
-	sut := NewController(mockClient)
+	sut := ThresholdPolicy{20.}
 	t.Run("do not migrate if 80% free", func(t *testing.T) {
 		nodes := NodeMemMap{"z1": 80., "z2": 90.5}
 		mockClient.On("GetFreeMemoryOfNodes").Return(nodes, nil).Once()
-		assert.Equal(t, 0, len(sut.GetCriticalNodes()))
+		assert.Equal(t, 0, len(sut.GetCriticalNodes(mockClient)))
 	})
 	t.Run("migrate if 10% free", func(t *testing.T) {
 		nodes := NodeMemMap{"z1": 80., "z2": 10.5}
 		mockClient.On("GetFreeMemoryOfNodes").Return(nodes, nil).Once()
-		assert.Equal(t, 1, len(sut.GetCriticalNodes()))
+		assert.Equal(t, 1, len(sut.GetCriticalNodes(mockClient)))
 	})
 }
 
