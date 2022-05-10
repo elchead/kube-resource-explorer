@@ -15,7 +15,7 @@ const memoryMetric = "memory_working_set_bytes" // "memory_usage_bytes"
 type Clienter interface {
 	GetPodMemories(nodeName string) (PodMemMap, error)
 	GetFreeMemoryNode(nodeName string) (float64, error)
-	GetFreeMemoryOfNodes() (NodeMemMap, error)
+	GetFreeMemoryOfNodes() (NodeFreeMemMap, error)
 	// GetPodMemorySlope(podName, time, slopeWindow string) (float64, error)
 
 }
@@ -107,9 +107,9 @@ func (c *Client) GetFreeMemoryNode(nodeName string) (float64, error) {
 	return -1., err
 }
 
-type NodeMemMap map[string]float64
+type NodeFreeMemMap map[string]float64
 
-func (c *Client) GetFreeMemoryOfNodes() (NodeMemMap, error) {
+func (c *Client) GetFreeMemoryOfNodes() (NodeFreeMemMap, error) {
 	query := fmt.Sprintf(`from(bucket: "%s")
 	|> range(start: %s)
 	|> filter(fn: (r) => r["_measurement"] == "mem")
@@ -117,7 +117,7 @@ func (c *Client) GetFreeMemoryOfNodes() (NodeMemMap, error) {
 	|> last()`, c.bucket, c.TimeFrame)
 	res, err := c.Query(query)
 
-	mp := make(NodeMemMap)
+	mp := make(NodeFreeMemMap)
 	for err == nil && res.Next() {
 		table := res.Record()
 		node := table.ValueByKey("host").(string)

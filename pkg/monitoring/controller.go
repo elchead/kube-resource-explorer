@@ -5,13 +5,46 @@ import (
 )
 
 type Controller struct {
-	Client   Clienter
-	Policy   MigrationPolicy
-	NbrNodes int
+	Client  Clienter
+	Policy  MigrationPolicy
+	Cluster Cluster
 }
 
+type Cluster struct {
+	NbrNodes          int
+	NodeSize          float64
+	TargetFreePercent float64
+}
+
+func (c Cluster) isSpaceAvailable(nodes []string) bool {
+	if len(nodes) == c.NbrNodes {
+		return false
+	}
+	return true
+}
+
+func (c Cluster) getFreePercent(freeNodeGb float64) float64 {
+	return freeNodeGb / c.NodeSize * 100.
+}
+
+func (c Cluster) enoughSpaceAvailableOn(originalNode string, podMemory float64, nodes NodeFreeMemMap) string {
+	for node, free_percent := range nodes {
+		if node != originalNode {
+			freeGb := free_percent / 100. * c.NodeSize
+			newFreeGb := freeGb - podMemory
+			if c.getFreePercent(newFreeGb) > c.TargetFreePercent {
+				return node
+			}
+		}
+	}
+	return ""
+}
 func NewController(client Clienter) *Controller {
-	return &Controller{client, ThresholdPolicy{20.}, 2}
+	return NewControllerWithPolicy(client, ThresholdPolicy{20.})
+}
+
+func NewControllerWithPolicy(client Clienter, policy MigrationPolicy) *Controller {
+	return &Controller{client, policy, Cluster{NbrNodes: 2, NodeSize: 450., TargetFreePercent: 20.}}
 }
 
 type ThresholdPolicy struct {
@@ -40,7 +73,8 @@ func (m *NodeFullError) Error() string {
 
 func (c Controller) GetMigrations() (migrations []migration.MigrationCmd, err error) {
 	nodes := c.Policy.GetCriticalNodes(c.Client)
-	if !c.isSpaceAvailable(nodes) {
+	// nodeMemApp, _ := c.Client.GetFreeMemoryOfNodes()
+	if !c.Cluster.isSpaceAvailable(nodes) {
 		return []migration.MigrationCmd{}, &NodeFullError{}
 	}
 	for _, node := range nodes {
@@ -49,16 +83,12 @@ func (c Controller) GetMigrations() (migrations []migration.MigrationCmd, err er
 			return migrations, err
 		}
 		pod := GetMaxPod(podMems)
-		migrations = append(migrations, migration.MigrationCmd{Pod: pod, Usage: podMems[pod]})
+		podMem := podMems[pod]
+		migrations = append(migrations, migration.MigrationCmd{Pod: pod, Usage: podMem})
+		// if c.Cluster.enoughSpaceAvailableOn(node, podMem, nodeMemApp) != "" {
+		// }
 	}
 	return migrations, nil
-}
-
-func (c Controller) isSpaceAvailable(nodes []string) bool {
-	if len(nodes) == c.NbrNodes {
-		return false
-	}
-	return true
 }
 
 func GetMaxPod(pods PodMemMap) (pod string) {

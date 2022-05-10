@@ -11,12 +11,12 @@ func TestGetCriticalNodes(t *testing.T) {
 	mockClient := &mockClient{}
 	sut := ThresholdPolicy{20.}
 	t.Run("do not migrate if 80% free", func(t *testing.T) {
-		nodes := NodeMemMap{"z1": 80., "z2": 90.5}
+		nodes := NodeFreeMemMap{"z1": 80., "z2": 90.5}
 		mockClient.On("GetFreeMemoryOfNodes").Return(nodes, nil).Once()
 		assert.Equal(t, 0, len(sut.GetCriticalNodes(mockClient)))
 	})
 	t.Run("migrate if 10% free", func(t *testing.T) {
-		nodes := NodeMemMap{"z1": 80., "z2": 10.5}
+		nodes := NodeFreeMemMap{"z1": 80., "z2": 10.5}
 		mockClient.On("GetFreeMemoryOfNodes").Return(nodes, nil).Once()
 		assert.Equal(t, 1, len(sut.GetCriticalNodes(mockClient)))
 	})
@@ -32,20 +32,35 @@ func TestMigration(t *testing.T) {
 	t.Run("do not migrate if other node is full", func(t *testing.T) {
 		mockClient := &mockClient{}
 		mockPolicy := &mockPolicy{}
-		sut := Controller{mockClient, mockPolicy, 2}
+		sut := NewControllerWithPolicy(mockClient, mockPolicy)
 		mockPolicy.On("GetCriticalNodes", mock.Anything).Return([]string{"z1", "z2"}, nil)
+		migs, err := sut.GetMigrations()
+		assert.Error(t, err)
+		assert.Empty(t, migs)
+	})
+	t.Run("do not migrate if other node is full after migration", func(t *testing.T) {
+		mockClient := &mockClient{}
+		sut := NewController(mockClient)
+		podsZ1 := PodMemMap{"z1_w": 75, "z2_q": 200, "z3_t": 40}
+		podsZ2 := PodMemMap{"z2_w": 100, "z2_q": 200}
+		nodes := NodeFreeMemMap{"z1": 30., "z2": 15.5}
+		mockClient.On("GetFreeMemoryOfNodes").Return(nodes, nil)
+		mockClient.On("GetPodMemories", "z2").Return(podsZ2, nil)
+		mockClient.On("GetPodMemories", "z1").Return(podsZ1, nil)
 		migs, err := sut.GetMigrations()
 		assert.Error(t, err)
 		assert.Empty(t, migs)
 	})
 }
 
-func setupControllerWithMocks(criticalNodes []string) Controller {
+func setupControllerWithMocks(criticalNodes []string) *Controller {
 	mockClient := &mockClient{}
 	mockPolicy := &mockPolicy{}
-	sut := Controller{mockClient, mockPolicy, 2}
+	sut := NewControllerWithPolicy(mockClient, mockPolicy)
 	podsZ2 := PodMemMap{"z2_w": 50, "z2_q": 10000000}
-	mockPolicy.On("GetCriticalNodes", mock.Anything).Return(criticalNodes, nil).Once()
+	mockPolicy.On("GetCriticalNodes", mock.Anything).Return(criticalNodes, nil)
+	nodes := NodeFreeMemMap{"z1": 90., "z2": 90.}
+	mockClient.On("GetFreeMemoryOfNodes").Return(nodes, nil)
 	mockClient.On("GetPodMemories", "z2").Return(podsZ2, nil).Once()
 	return sut
 }
@@ -58,9 +73,9 @@ type mockClient struct {
 	mock.Mock
 }
 
-func (c *mockClient) GetFreeMemoryOfNodes() (NodeMemMap, error) {
+func (c *mockClient) GetFreeMemoryOfNodes() (NodeFreeMemMap, error) {
 	args := c.Called()
-	return args.Get(0).(NodeMemMap), args.Error(1)
+	return args.Get(0).(NodeFreeMemMap), args.Error(1)
 }
 
 func (c *mockClient) GetFreeMemoryNode(nodeName string) (float64, error) {
