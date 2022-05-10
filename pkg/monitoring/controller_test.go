@@ -7,34 +7,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-type mockClient struct {
-	mock.Mock
-}
-
-func (c *mockClient) GetFreeMemoryOfNodes() (NodeMemMap, error) {
-	args := c.Called()
-	return args.Get(0).(NodeMemMap), args.Error(1)
-}
-
-func (c *mockClient) GetFreeMemoryNode(nodeName string) (float64, error) {
-	args := c.Called(nodeName)
-	return args.Get(0).(float64), args.Error(1)
-}
-
-func (c *mockClient) GetPodMemories(nodeName string) (PodMemMap, error) {
-	args := c.Called(nodeName)
-	return args.Get(0).(PodMemMap), args.Error(1)
-}
-
-type mockPolicy struct {
-	mock.Mock
-}
-
-func (c *mockPolicy) GetCriticalNodes(clt Clienter) []string {
-	args := c.Called()
-	return args.Get(0).([]string)
-}
-
 func TestGetCriticalNodes(t *testing.T) {
 	mockClient := &mockClient{}
 	sut := ThresholdPolicy{20.}
@@ -71,4 +43,32 @@ func setupControllerWithMocks() Controller {
 
 func TestGetMaxPod(t *testing.T) {
 	assert.Equal(t, "z1_q", GetMaxPod(PodMemMap{"z1_w": 1000, "z1_q": 5000000}))
+}
+
+type mockClient struct {
+	mock.Mock
+}
+
+func (c *mockClient) GetFreeMemoryOfNodes() (NodeMemMap, error) {
+	args := c.Called()
+	return args.Get(0).(NodeMemMap), args.Error(1)
+}
+
+func (c *mockClient) GetFreeMemoryNode(nodeName string) (float64, error) {
+	args := c.Called(nodeName)
+	return args.Get(0).(float64), args.Error(1)
+}
+
+func (c *mockClient) GetPodMemories(nodeName string) (PodMemMap, error) {
+	args := c.Called(nodeName)
+	return args.Get(0).(PodMemMap), args.Error(1)
+}
+
+type mockPolicy struct {
+	mock.Mock
+}
+
+func (c *mockPolicy) GetCriticalNodes(clt Clienter) []string {
+	args := c.Called()
+	return args.Get(0).([]string)
 }
