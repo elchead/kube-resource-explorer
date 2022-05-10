@@ -23,20 +23,29 @@ func TestGetCriticalNodes(t *testing.T) {
 }
 
 func TestMigration(t *testing.T) {
-	sut := setupControllerWithMocks()
 	t.Run("migrate correct pod on critical node", func(t *testing.T) {
+		sut := setupControllerWithMocks([]string{"z2"})
 		migs, err := sut.GetMigrations()
 		assert.NoError(t, err)
 		assert.Equal(t, "z2_q", migs[0].Pod)
 	})
+	t.Run("do not migrate if other node is full", func(t *testing.T) {
+		mockClient := &mockClient{}
+		mockPolicy := &mockPolicy{}
+		sut := Controller{mockClient, mockPolicy, 2}
+		mockPolicy.On("GetCriticalNodes", mock.Anything).Return([]string{"z1", "z2"}, nil)
+		migs, err := sut.GetMigrations()
+		assert.Error(t, err)
+		assert.Empty(t, migs)
+	})
 }
 
-func setupControllerWithMocks() Controller {
+func setupControllerWithMocks(criticalNodes []string) Controller {
 	mockClient := &mockClient{}
 	mockPolicy := &mockPolicy{}
-	sut := Controller{mockClient, mockPolicy}
+	sut := Controller{mockClient, mockPolicy, 2}
 	podsZ2 := PodMemMap{"z2_w": 50, "z2_q": 10000000}
-	mockPolicy.On("GetCriticalNodes", mock.Anything).Return([]string{"z2"}, nil).Once()
+	mockPolicy.On("GetCriticalNodes", mock.Anything).Return(criticalNodes, nil).Once()
 	mockClient.On("GetPodMemories", "z2").Return(podsZ2, nil).Once()
 	return sut
 }
